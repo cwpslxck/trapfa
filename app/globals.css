@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  direction: rtl;
+  font-weight: 300;
+}
+
+::-webkit-scrollbar {
+  width: 15px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(28, 25, 23);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(28, 25, 23, 0.8);
+}
+::selection {
+  @apply bg-violet-500 text-white;
+}
+
+body {
+  @apply bg-black text-white;
+}
+
+.ltr {
+  direction: ltr;
+}
+
+.rtl {
+  direction: rtl;
+}
+
+input,
+textarea {
+  @apply w-full ltr placeholder:text-center rounded-lg py-3 px-4 placeholder:text-stone-500 placeholder:text-sm bg-stone-50 text-black outline-none;
+}
+
+form button {
+  @apply bg-violet-500 w-full p-3 rounded-md;
+}
+
+#content {
+  @apply pb-2;
+}
+
+#content h2 {
+  @apply font-semibold text-3xl py-4;
+}
+#content p {
+  @apply py-1;
+}
+#content a {
+  @apply inline-block mx-1.5 transition-all text-violet-400 hover:text-violet-500 rounded-lg;
+}
+
+.loadinghide {
+  animation: highlight 3s;
+}
+
+@keyframes highlight {
+  from,
+  99% {
+    display: none;
+  }
+  to {
+    display: block;
+  }
+}
+
+.loadinganim {
+  @apply bg-stone-900 animate-pulse;
+}
