@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import "./globals.css";
 import { Vazirmatn } from "next/font/google";
+import localFont from "next/font/local";
 import Footer from "@/components/Footer";
 
 export const metadata = {
@@ -8,7 +9,8 @@ export const metadata = {
   description: "Persian New-Gen Music Magazine",
 };
 
-const font = Vazirmatn({ subsets: ["arabic"] });
+const font1 = Vazirmatn({ subsets: ["arabic"] });
+const font = localFont({ src: "../assets/font.ttf" });
 
 export default function RootLayout({ children }) {
   return (

@@ -41,6 +41,7 @@ export default function ArticlesPage() {
               title={p.title}
               desc={p.desc}
               img={p.image}
+              min={p.min}
             />
           ))}
         </div>

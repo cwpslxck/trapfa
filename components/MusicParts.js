@@ -31,12 +31,15 @@ function MusicParts({
             <span className="text-lg tracking-wider font-extrabold">
               {title}
             </span>
-            <div
-              // href={"/alo"}
+            <span
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = [`/artists/${artistMain}`];
+            }}
               className="opacity-70 hover:opacity-80 transition-all font-extralight text-sm"
-            >
+              >
               {artistMain}
-            </div>
+            </span>
           </div>
         </div>
       </div>

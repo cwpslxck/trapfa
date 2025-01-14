@@ -13,12 +13,33 @@ export default function ArtistsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const cachedData = localStorage.getItem("cachedArtists");
+        const cachedTimestamp = localStorage.getItem("cachedArtistsTimestamp");
+
+        if (cachedData && cachedTimestamp) {
+          const currentTime = new Date().getTime();
+          const cacheDuration = 15 * 60 * 1000; //
+
+          if (currentTime - parseInt(cachedTimestamp) < cacheDuration) {
+            setArtists(JSON.parse(cachedData));
+            setLoading(false);
+            return;
+          }
+        }
+
         const response = await fetch("/api/artists");
+
         if (!response.ok) {
           throw new Error("خطا در دریافت داده‌ها");
         }
+
         const data = await response.json();
         setArtists(data);
+        localStorage.setItem("cachedArtists", JSON.stringify(data));
+        localStorage.setItem(
+          "cachedArtistsTimestamp",
+          new Date().getTime().toString()
+        );
       } catch (error) {
         setError(error.message);
       } finally {
@@ -27,7 +48,12 @@ export default function ArtistsPage() {
     };
 
     fetchData();
+
+    const interval = setInterval(fetchData, 15 * 60 * 1000); // Fetch new data every 15 minutes
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
   }, []);
+
   return (
     <div>
       <Title
@@ -38,11 +64,7 @@ export default function ArtistsPage() {
       />
       <BannerAds />
       {loading || error ? (
-        <div className="space-y-4">
-          <LoadingPart />
-          <LoadingPart />
-          <LoadingPart />
-        </div>
+        <LoadingPart />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {artists.map((artist) => (

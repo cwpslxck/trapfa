@@ -8,6 +8,7 @@ function ArtistPart({ image, artistName, role, url }) {
     <Link
       href={`/artists/${url}`}
       className="w-full rounded-xl relative cursor-pointer block"
+      id={url}
     >
       <Image
         draggable="false"

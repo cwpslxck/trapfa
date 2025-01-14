@@ -2,28 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  direction: rtl;
-  font-weight: 300;
-}
-
 ::-webkit-scrollbar {
-  width: 15px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(28, 25, 23);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(28, 25, 23, 0.8);
+  background-color: var(--foreground);
+  border-radius: 1px;
 }
 ::selection {
   @apply bg-violet-500 text-white;
 }
 
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
 body {
-  @apply bg-black text-white;
+  @apply bg-stone-950 text-white select-none;
+  direction: rtl;
+  font-weight: 300;
 }
 
 .ltr {
@@ -72,5 +78,5 @@ form button {
 }
 
 .loadinganim {
-  @apply bg-stone-900 animate-pulse;
+  @apply animate-pulse;
 }

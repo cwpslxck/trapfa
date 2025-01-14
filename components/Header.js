@@ -27,7 +27,7 @@ function Header() {
           >
             مجله ترپفا
           </Link>
-          <ul className="inline-flex gap-6 items-center">
+          <ul className="md:inline-flex gap-6 items-center hidden">
             {items.map((item, i) => (
               <li key={i}>
                 <Link href={`/${item.link}`}>{item.title}</Link>

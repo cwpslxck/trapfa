@@ -15,6 +15,10 @@ function AddArtist() {
     bio: "",
     role: "",
     url: "",
+    soundcloud: "",
+    spotify: "",
+    instagram: "",
+    telegram: "",
   });
 
   const handleFileChange = (event) => {
@@ -59,6 +63,10 @@ function AddArtist() {
         bio: "",
         role: "",
         url: "",
+        soundcloud: "",
+        spotify: "",
+        instagram: "",
+        telegram: "",
       });
       setFile(null);
       setPreview(null);
@@ -93,7 +101,7 @@ function AddArtist() {
         required
         type="text"
         name="name"
-        placeholder="Name"
+        placeholder="نام آرتیست به فارسی"
         value={formData.name}
         onChange={handleInputChange}
       />
@@ -101,22 +109,50 @@ function AddArtist() {
         required
         type="text"
         name="url"
-        placeholder="Url"
+        placeholder="نام آرتیست به انگلیسی (بدون فاصله)"
         value={formData.url}
         onChange={handleInputChange}
       />
       <input
         type="text"
         name="role"
-        placeholder="Role"
+        placeholder="نقش آرتیست (مثال: کاور آرتیست)"
         value={formData.role}
         onChange={handleInputChange}
       />
       <input
         type="text"
         name="bio"
-        placeholder="Bio"
+        placeholder="بیوگرافی آرتیست"
         value={formData.bio}
+        onChange={handleInputChange}
+      />
+      <input
+        type="url"
+        name="ig"
+        placeholder="لینک اینستاگرام آرتیست"
+        value={formData.instagram}
+        onChange={handleInputChange}
+      />
+      <input
+        type="url"
+        name="tel"
+        placeholder="لینک چنل تلگرام آرتیست"
+        value={formData.telegram}
+        onChange={handleInputChange}
+      />
+      <input
+        type="url"
+        name="sc"
+        placeholder="لینک ساندکلود آرتیست"
+        value={formData.soundcloud}
+        onChange={handleInputChange}
+      />
+      <input
+        type="url"
+        name="spoti"
+        placeholder="لینک اسپاتیفای آرتیست"
+        value={formData.spotify}
         onChange={handleInputChange}
       />
       <button type="submit" className="bg-violet-500">
