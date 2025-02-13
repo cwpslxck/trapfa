@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--foreground);
+  border-radius: 1px;
+}
+::selection {
+  @apply bg-violet-500 text-white;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  @apply bg-black text-white;
+  direction: rtl;
+  font-weight: 300;
+}
+
+.ltr {
+  direction: ltr;
+}
+
+.rtl {
+  direction: rtl;
+}
+
+form {
+  @apply w-full px-7 py-8 border border-transparent bg-transparent md:border-white/20 rounded-lg flex flex-col items-start justify-center gap-2;
+}
+
+input,
+textarea {
+  @apply w-full ltr placeholder:text-right rounded-lg py-3 px-4 placeholder:text-stone-500 placeholder:text-sm bg-stone-800 text-white  focus:outline outline-violet-400;
+}
+
+form button {
+  @apply bg-violet-500 w-full h-12 flex justify-center items-center rounded-md mt-4;
+}
+
+#content {
+  @apply pb-2;
+}
+
+#content h2 {
+  @apply font-semibold text-3xl py-4;
+}
+#content p {
+  @apply py-1;
+}
+#content a {
+  @apply inline-block mx-1.5 transition-all text-violet-400 hover:text-violet-500 rounded-lg;
+}
+
+.loadinghide {
+  animation: highlight 3s;
+}
+
+@keyframes highlight {
+  from,
+  99% {
+    display: none;
+  }
+  to {
+    display: block;
+  }
+}
+
+.loadinganim {
+  @apply animate-pulse;
+}
