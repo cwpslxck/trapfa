@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 1px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -49,6 +49,10 @@ textarea {
   @apply w-full ltr placeholder:text-right rounded-lg py-3 px-4 placeholder:text-stone-500 placeholder:text-sm bg-stone-800 text-white  focus:outline outline-violet-400;
 }
 
+.inputholder {
+  @apply w-full ltr rounded-lg pl-4 bg-stone-800 text-white flex items-center gap-2;
+}
+
 form button {
   @apply bg-violet-500 w-full h-12 flex justify-center items-center rounded-md mt-4;
 }
@@ -83,4 +87,8 @@ form button {
 
 .loadinganim {
   @apply animate-pulse;
+}
+
+.ltr {
+  direction: ltr;
 }

@@ -17,7 +17,7 @@ function SongsPage() {
 
         if (cachedData && cachedTimestamp) {
           const currentTime = new Date().getTime();
-          const cacheDuration = 15 * 60 * 1000; // 5 minutes in milliseconds
+          const cacheDuration = 15 * 60 * 1000;
 
           if (currentTime - parseInt(cachedTimestamp) < cacheDuration) {
             setTracks(JSON.parse(cachedData));
@@ -48,9 +48,9 @@ function SongsPage() {
 
     fetchData();
 
-    const interval = setInterval(fetchData, 15 * 60 * 1000); // Fetch new data every 5 minutes
+    const interval = setInterval(fetchData, 15 * 60 * 1000);
 
-    return () => clearInterval(interval); // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   return (

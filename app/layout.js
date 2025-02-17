@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
           <meta name="theme-color" content="#ec69e7" />
         </head>
         <body className="w-full flex justify-center">
-          <div className="max-w-7xl flex flex-col justify-between w-full min-h-screen overflow-x-hidden">
+          <div className="max-w-7xl w-full min-h-screen overflow-x-hidden flex flex-col justify-between">
             <div>
               <Header />
               <main className="px-6 md:px-12 lg:px-16">

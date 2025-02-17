@@ -10,62 +10,118 @@ import LoadingPage from "@/components/LoadingPage";
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-
-  const { showError } = useError();
+  const [loading, setLoading] = useState(true);
+  const { showError, showSuccess } = useError();
   const router = useRouter();
 
-  // چک کردن وضعیت کاربر هنگام لود شدن صفحه
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        router.push("/dashboard");
-      } else {
-        setPageLoading(false);
-      }
-    };
-    checkUser();
-  }, []);
+    // چک کردن localStorage
+    const cachedUser = localStorage.getItem("cached_user");
+    const lastCheck = localStorage.getItem("last_auth_check");
+    const now = Date.now();
 
-  async function handleAuth(event) {
-    event.preventDefault(); // جلوگیری از رفرش فرم
-
-    if (!email || !password) {
-      showError("ایمیل و رمز عبور را وارد کنید!");
+    // اگر کمتر از 1 ساعت از آخرین چک گذشته و کاربر در حافظه هست
+    if (
+      cachedUser &&
+      lastCheck &&
+      now - parseInt(lastCheck) < 3600000 // 1 ساعت
+    ) {
+      router.push("/dashboard");
       return;
     }
 
+    // در غیر این صورت از سرور چک می‌کنیم
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // ذخیره در localStorage
+        localStorage.setItem("cached_user", JSON.stringify(user));
+        localStorage.setItem("last_auth_check", Date.now().toString());
+        router.push("/dashboard");
+        return;
+      }
+
+      // اگر کاربر لاگین نیست، تمام اطلاعات قبلی را پاک می‌کنیم
+      localStorage.removeItem("cached_user");
+      localStorage.removeItem("last_auth_check");
+      localStorage.removeItem("cached_profile");
+
+      setLoading(false);
+    } catch (error) {
+      // در صورت خطا هم اطلاعات را پاک می‌کنیم
+      localStorage.removeItem("cached_user");
+      localStorage.removeItem("last_auth_check");
+      localStorage.removeItem("cached_profile");
+
+      setLoading(false);
+    }
+  };
+
+  async function handleAuth(event) {
+    event.preventDefault();
     setLoading(true);
 
-    // سعی می‌کنیم لاگین کنیم
-    const { data: loginData, error: loginError } =
-      await supabase.auth.signInWithPassword({ email, password });
-
-    if (loginData?.user) {
-      router.push("/dashboard");
-    } else {
-      // اگر لاگین ناموفق بود، ثبت‌نام انجام بده
-      const { data: signUpData, error: signUpError } =
-        await supabase.auth.signUp({ email, password });
-
-      if (signUpError) {
-        if (signUpError.message.includes("already registered")) {
-          showError("این ایمیل قبلاً ثبت شده است، لطفاً لاگین کنید!");
-        } else {
-          showError(signUpError.message);
-        }
-      } else {
-        showError("ثبت‌نام موفق! لطفاً ایمیل خود را چک کنید.");
-        router.push("/dashboard");
+    try {
+      if (!email || !password) {
+        throw new Error("ایمیل یا رمز عبور اشتباه است.");
       }
-    }
 
-    setLoading(false);
+      const { data: loginData, error: loginError } =
+        await supabase.auth.signInWithPassword({ email, password });
+
+      if (loginData?.user) {
+        // ذخیره در localStorage
+        localStorage.setItem("cached_user", JSON.stringify(loginData.user));
+        localStorage.setItem("last_auth_check", Date.now().toString());
+
+        showSuccess("با موفقیت وارد شدید!");
+        router.push("/dashboard");
+      } else {
+        const { data: signUpData, error: signUpError } =
+          await supabase.auth.signUp({ email, password });
+
+        if (signUpError) {
+          if (signUpError.message.includes("already registered")) {
+            throw new Error("ایمیل یا رمز عبور اشتباه است.");
+          } else if (signUpError.message.includes("at least 6 characters")) {
+            throw new Error("رمز عبور باید حداقل ۶ کاراکتر باشد.");
+          } else {
+            throw signUpError;
+          }
+        } else if (signUpData?.user) {
+          showSuccess("ثبت‌نام با موفقیت انجام شد!");
+          router.push("/verify");
+        }
+      }
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (pageLoading) {
+  const handleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      showError("خطا در ورود با گوگل");
+    }
+  };
+
+  if (loading) {
     return <LoadingPage />;
   }
 
@@ -73,8 +129,6 @@ export default function AuthPage() {
     <div className="h-screen z-30 absolute w-full inset-0 px-4 lg:px-0 bg-black flex justify-start gap-10 items-center flex-col-reverse lg:flex-row">
       <div className="w-full h-full flex justify-center items-center mx-auto max-w-[360px]">
         <form onSubmit={handleAuth}>
-          {" "}
-          {/* اضافه کردن onSubmit */}
           <h1 className="text-xl mb-2 font-semibold tracking-wider">
             ورود | ثبت‌نام
           </h1>

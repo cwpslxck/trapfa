@@ -9,12 +9,14 @@ import {
   FaSoundcloud,
   FaSpotify,
   FaTelegramPlane,
+  FaHeadphones,
 } from "react-icons/fa";
+import { MdVerified } from "react-icons/md";
 import LoadingPart from "@/components/LoadingPart";
 
 export default function ArtistDetail({ params }) {
-  const { url } = use(params); // 👈 حالا params یک Promise هست و باید از use() استفاده کنیم
-  const artist = use(getArtistByUrl(url)); // 👈 گرفتن اطلاعات آرتیست به روش جدید
+  const { url } = use(params);
+  const artist = use(getArtistByUrl(url));
 
   if (!artist) {
     return (
@@ -23,81 +25,109 @@ export default function ArtistDetail({ params }) {
   }
 
   return (
-    <div className="">
-      {/* Artist Header */}
-      <div className="flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
-        <div className="w-full md:w-1/3 aspect-square relative rounded-lg overflow-hidden">
-          <Image
-            src={artist.image || "/default-avatar.jpg"}
-            alt={artist.name || "آرتیست"}
-            width={200}
-            height={200}
-            draggable="false"
-            className="object-cover h-full w-full bg-stone-900"
-            priority
-            loading="eager"
-          />
-        </div>
-        <div className="w-full flex flex-col h-full justify-between">
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div>
-              <div className="inline-flex items-center gap-3">
-                <h1 className="text-4xl md:text-5xl font-bold mb-2">
+    <div className="flex flex-col gap-8">
+      {/* Hero Section */}
+      <div className="relative h-[40vh] rounded-2xl overflow-hidden">
+        <Image
+          src={artist.image || "/default-avatar.jpg"}
+          alt={artist.name || "آرتیست"}
+          width={600}
+          height={600}
+          className="object-cover h-full w-full"
+          loading="eager"
+        />
+        <div className="absolute inset-0 backdrop-blur-md bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+
+        {/* Artist Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-8">
+          <div className="flex items-end justify-between">
+            <div className="space-y-3">
+              <span className="tracking-wider opacity-70 font-extralight">
+                {artist.url || ""}
+              </span>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl md:text-5xl font-black">
                   {artist.name || "بدون نام"}
                 </h1>
-                <h2 className="text-xl opacity-70">{artist.url}</h2>
+                <MdVerified className="text-violet-500 size-6" />
               </div>
-              {artist.role && <p>{artist.role}</p>}
             </div>
-            <div className="flex items-start h-full gap-3 pt-3">
-              {artist.instagram && (
-                <Link href={artist.instagram} target="_blank">
-                  <FaInstagram size={24} className="opacity-80" />
-                </Link>
-              )}
-              {artist.telegram && (
-                <Link href={artist.telegram} target="_blank">
-                  <FaTelegramPlane size={24} className="opacity-80" />
-                </Link>
-              )}
+            <div>
+              <Image
+                src={artist.image || "/default-avatar.jpg"}
+                alt={artist.name || "آرتیست"}
+                width={600}
+                height={600}
+                priority
+                className="object-cover size-48 rounded-full"
+              />
             </div>
-          </div>
-          {/* <p className="text-gray-300 mt-2 mb-6 text-right leading-relaxed">
-            {artist.bio || "بیوگرافی ثبت نشده است."}
-          </p> */}
-          {/* Music Platform buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {artist.soundcloud && (
-              <Link
-                href={artist.soundcloud}
-                target="_blank"
-                className="w-full flex items-center justify-center gap-2 text-lg bg-orange-600 rounded-md"
-              >
-                <button className="inline-flex justify-center items-center gap-3 font-bold py-3">
-                  ساندکلود
-                  <FaSoundcloud className="size-5" />
-                </button>
-              </Link>
-            )}
-            {artist.spotify && (
-              <Link
-                href={artist.spotify}
-                target="_blank"
-                className="w-full flex items-center justify-center gap-2 text-lg bg-green-600 rounded-md"
-              >
-                <button className="inline-flex justify-center items-center gap-3 font-bold py-3">
-                  اسپاتیفای
-                  <FaSpotify className="size-5" />
-                </button>
-              </Link>
-            )}
           </div>
         </div>
       </div>
+
+      {/* Social Links & Streaming */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex gap-3">
+          <Link
+            href={artist.instagram || ""}
+            target="_blank"
+            className="bg-gradient-to-br from-purple-600 to-pink-600 p-4 rounded-xl hover:opacity-90 transition-all"
+          >
+            <FaInstagram size={24} />
+          </Link>
+          <Link
+            href={artist.telegram || ""}
+            target="_blank"
+            className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl hover:opacity-90 transition-all"
+          >
+            <FaTelegramPlane size={24} />
+          </Link>
+        </div>
+
+        <div className="flex gap-4">
+          <Link
+            href={artist.soundcloud || ""}
+            target="_blank"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:opacity-90 transition-all"
+          >
+            <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
+              <FaSoundcloud size={24} />
+              ساندکلود
+            </button>
+          </Link>
+
+          <Link
+            href={artist.spotify || ""}
+            target="_blank"
+            className="flex-1 bg-gradient-to-r from-green-500 to-green-600 rounded-xl hover:opacity-90 transition-all"
+          >
+            <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
+              <FaSpotify size={24} />
+              اسپاتیفای
+            </button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Bio Section */}
+      {artist.bio && (
+        <div className="bg-stone-900 rounded-xl p-6">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="w-1 h-6 bg-violet-500 rounded-full"></span>
+            بیوگرافی
+          </h2>
+          <p className="text-stone-300 leading-relaxed whitespace-pre-wrap">
+            {artist.bio}
+          </p>
+        </div>
+      )}
+
+      {/* Tracks Section */}
       <div>
         <Title
-          title={"آثار آرتیست"}
-          desc={`تمام آهنگ‌هایی که ${artist.name} توی اونا حضور داشته.`}
+          title="آثار آرتیست"
+          desc={`تمام آهنگ‌هایی که ${artist.name} توی اونا حضور داشته`}
         />
         <LoadingPart />
       </div>

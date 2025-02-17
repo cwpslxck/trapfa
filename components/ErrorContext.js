@@ -1,23 +1,30 @@
 "use client";
 import { createContext, useContext, useState } from "react";
-import { MdErrorOutline } from "react-icons/md";
+import { MdErrorOutline, MdCheckCircleOutline } from "react-icons/md";
 
 const ErrorContext = createContext();
 
 export function ErrorProvider({ children }) {
-  const [errors, setErrors] = useState([]);
+  const [messages, setMessages] = useState([]);
 
   const showError = (message) => {
-    setErrors((prevErrors) => [...prevErrors, message]);
+    setMessages((prev) => [...prev, { type: "error", text: message }]);
     setTimeout(() => {
-      setErrors((prevErrors) => prevErrors.slice(1));
+      setMessages((prev) => prev.slice(1));
+    }, 3000);
+  };
+
+  const showSuccess = (message) => {
+    setMessages((prev) => [...prev, { type: "success", text: message }]);
+    setTimeout(() => {
+      setMessages((prev) => prev.slice(1));
     }, 3000);
   };
 
   return (
-    <ErrorContext.Provider value={{ showError }}>
+    <ErrorContext.Provider value={{ showError, showSuccess }}>
       {children}
-      <ErrorToast errors={errors} />
+      <Toast messages={messages} />
     </ErrorContext.Provider>
   );
 }
@@ -26,18 +33,27 @@ export function useError() {
   return useContext(ErrorContext);
 }
 
-function ErrorToast({ errors }) {
+function Toast({ messages }) {
   return (
     <div className="fixed right-0 top-5 flex flex-col gap-2 z-50 w-full lg:max-w-sm px-5">
-      {errors.slice(-4).map((error, index) => (
+      {messages.slice(-4).map((message, index) => (
         <div
           key={index}
-          className="border-red-600/80 border  bg-red-600/20 backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-1000 opacity-100 inline-flex gap-1.5 items-center"
+          className={`border backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-1000 opacity-100 inline-flex gap-1.5 items-center
+            ${
+              message.type === "error"
+                ? "border-red-600/80 bg-red-600/20"
+                : "border-green-600/80 bg-green-600/20"
+            }`}
         >
           <div>
-            <MdErrorOutline size={16} />
+            {message.type === "error" ? (
+              <MdErrorOutline size={16} />
+            ) : (
+              <MdCheckCircleOutline size={16} />
+            )}
           </div>
-          {error}
+          {message.text}
         </div>
       ))}
     </div>
