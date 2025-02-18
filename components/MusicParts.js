@@ -32,12 +32,12 @@ function MusicParts({
               {title}
             </span>
             <span
-            onClick={(e) => {
-              e.stopPropagation();
-              window.location.href = [`/artists/${artistMain}`];
-            }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = [`/artists/${artistMain}`];
+              }}
               className="opacity-70 hover:opacity-80 transition-all font-extralight text-sm"
-              >
+            >
               {artistMain}
             </span>
           </div>

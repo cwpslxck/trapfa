@@ -2,14 +2,17 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FaUserAlt } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import { MdElectricBolt } from "react-icons/md";
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
+import Image from "next/image";
+import { useAuth } from "@/contexts/AuthContext";
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -78,12 +81,32 @@ function Header() {
               <span className="font-medium">چنل تلگرام</span>
               <MdElectricBolt className="animate-spin" />
             </a>
-            <Link
-              href="/auth"
-              className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <FaUserAlt size={20} />
-            </Link>
+            {user && profile ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 py-1.5 px-3 rounded-full bg-stone-900 hover:bg-stone-800 transition-all group"
+              >
+                <div className="w-7 h-7 rounded-full overflow-hidden bg-stone-800">
+                  <Image
+                    src={profile.avatar_url || "/default-avatar.jpg"}
+                    alt={profile.display_name}
+                    width={28}
+                    height={28}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+                  {profile.display_name}
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href="/auth"
+                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
+              >
+                <FaUser className="text-lg" />
+              </Link>
+            )}
           </div>
         </nav>
       </header>

@@ -19,15 +19,31 @@ import {
   FaCheck,
   FaTimes,
 } from "react-icons/fa";
+import Image from "next/image";
+
+const ProfileAvatar = ({ profile, className }) => {
+  return (
+    <Image
+      src={profile?.avatar_url || "/default-avatar.jpg"}
+      alt={profile?.display_name || "User Avatar"}
+      width={128}
+      height={128}
+      className={`rounded-full object-cover ${className}`}
+    />
+  );
+};
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { showSuccess, showError } = useError();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -178,8 +194,59 @@ export default function Dashboard() {
     setIsEditing(true);
   };
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      // آپدیت editedProfile
+      setEditedProfile((prev) => ({
+        ...prev,
+        avatar_url: URL.createObjectURL(file),
+      }));
+    }
+  };
+
   const handleSave = async () => {
     try {
+      setLoading(true);
+      let avatarUrl = profile.avatar_url;
+
+      if (avatarFile) {
+        // پاک کردن عکس قبلی اگر وجود داشت
+        if (profile.avatar_url) {
+          const oldFilePath = profile.avatar_url.split("/").pop(); // گرفتن نام فایل از URL
+          const { error: deleteError } = await supabase.storage
+            .from("avatars")
+            .remove([`avatars/${oldFilePath}`]);
+
+          if (deleteError) {
+            console.error("خطا در حذف عکس قبلی:", deleteError);
+            // ادامه میدیم چون خطای حذف نباید مانع آپلود عکس جدید بشه
+          }
+        }
+
+        // آپلود عکس جدید
+        const fileExt = avatarFile.name.split(".").pop();
+        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+        avatarUrl = publicUrl;
+      }
+
       // چک کردن وضعیت درخواست verify
       const { data: verifyRequest, error: verifyError } = await supabase
         .from("verification_requests")
@@ -190,12 +257,12 @@ export default function Dashboard() {
 
       if (verifyError) throw verifyError;
 
-      // اگر درخواست verify در حال بررسی است، instagram_id رو آپدیت نمی‌کنیم
       const updatedProfile = {
         id: user.id,
         display_name: editedProfile.display_name,
         birth_date: editedProfile.birth_date,
         city: editedProfile.city,
+        avatar_url: avatarUrl,
         updated_at: new Date().toISOString(),
       };
 
@@ -210,16 +277,16 @@ export default function Dashboard() {
 
       if (profileError) throw profileError;
 
-      // آپدیت localStorage با اطلاعات جدید
-      const newProfile = { ...editedProfile };
-      // اگر درخواست verify در حال بررسی است، instagram_id قبلی رو حفظ می‌کنیم
+      // آپدیت localStorage
+      const newProfile = { ...editedProfile, avatar_url: avatarUrl };
       if (verifyRequest?.length && verifyRequest[0].status === "pending") {
         newProfile.instagram_id = profile.instagram_id;
+        showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
         showSuccess(
-          "اطلاعات بروزرسانی شد. آیدی اینستاگرام پس از تایید درخواست قبلی قابل تغییر است"
+          "صحت آیدی اینستاگرام شما نیز درحال بررسی توسط ادمین ها است."
         );
       } else {
-        showSuccess("اطلاعات با موفقیت بروزرسانی شد");
+        showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
       }
 
       localStorage.setItem("cached_profile", JSON.stringify(newProfile));
@@ -227,8 +294,12 @@ export default function Dashboard() {
 
       setProfile(newProfile);
       setIsEditing(false);
+      setAvatarFile(null);
+      setAvatarPreview(null);
     } catch (error) {
       showError("خطا در بروزرسانی اطلاعات");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -347,99 +418,173 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-6">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                <div className="bg-purple-500/10 p-3 rounded-xl">
-                  <FaUser className="text-xl text-purple-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-stone-400 mb-1">نام نمایشی</div>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.display_name}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          display_name: e.target.value,
-                        })
+              {isEditing ? (
+                <div className="flex flex-col gap-4">
+                  {/* Avatar Upload Section */}
+                  <div className="relative w-32 h-32 mx-auto mb-4">
+                    <Image
+                      src={
+                        avatarPreview ||
+                        editedProfile.avatar_url ||
+                        "/default-avatar.jpg"
                       }
-                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-purple-500/50"
+                      alt="User Avatar"
+                      width={128}
+                      height={128}
+                      className="rounded-full bg-stone-800 object-cover w-32 h-32"
                     />
-                  ) : (
-                    <div className="font-medium">
-                      {profile?.display_name || "درحال بررسی"}
+                    <label className="absolute bottom-0 right-0 bg-violet-500 p-2 rounded-full cursor-pointer hover:bg-violet-600 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <FaPen size={14} />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-purple-500/10 p-3 rounded-xl">
+                      <FaUser className="text-xl text-purple-400" />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                <div className="bg-rose-500/10 p-3 rounded-xl">
-                  <FaBirthdayCake className="text-xl text-rose-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-stone-400 mb-1">تاریخ تولد</div>
-                  {isEditing ? (
-                    <input
-                      type="date"
-                      value={editedProfile.birth_date}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          birth_date: e.target.value,
-                        })
-                      }
-                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-rose-500/50"
-                    />
-                  ) : (
-                    <div className="font-medium">
-                      {profile?.birth_date
-                        ? new Date(profile.birth_date).toLocaleDateString(
-                            "fa-IR"
-                          )
-                        : "درحال بررسی"}
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        نام نمایشی
+                      </div>
+                      <input
+                        type="text"
+                        value={editedProfile.display_name}
+                        onChange={(e) =>
+                          setEditedProfile({
+                            ...editedProfile,
+                            display_name: e.target.value,
+                          })
+                        }
+                        className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-purple-500/50"
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                <div className="bg-emerald-500/10 p-3 rounded-xl">
-                  <FaMapMarkerAlt className="text-xl text-emerald-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-stone-400 mb-1">شهر</div>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.city}
-                      onChange={(e) =>
-                        setEditedProfile({
-                          ...editedProfile,
-                          city: e.target.value,
-                        })
-                      }
-                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/50"
-                    />
-                  ) : (
-                    <div className="font-medium">
-                      {profile?.city || "درحال بررسی"}
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-rose-500/10 p-3 rounded-xl">
+                      <FaBirthdayCake className="text-xl text-rose-400" />
                     </div>
-                  )}
-                </div>
-              </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        تاریخ تولد
+                      </div>
+                      <input
+                        type="date"
+                        value={editedProfile.birth_date}
+                        onChange={(e) =>
+                          setEditedProfile({
+                            ...editedProfile,
+                            birth_date: e.target.value,
+                          })
+                        }
+                        className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-rose-500/50"
+                      />
+                    </div>
+                  </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                <div className="bg-pink-500/10 p-3 rounded-xl">
-                  <FaInstagram className="text-xl text-pink-400" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-stone-400 mb-1">اینستاگرام</div>
-                  <div className="font-medium ltr">
-                    @{profile?.instagram_id || "درحال بررسی"}
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-emerald-500/10 p-3 rounded-xl">
+                      <FaMapMarkerAlt className="text-xl text-emerald-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">شهر</div>
+                      <input
+                        type="text"
+                        value={editedProfile.city}
+                        onChange={(e) =>
+                          setEditedProfile({
+                            ...editedProfile,
+                            city: e.target.value,
+                          })
+                        }
+                        className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-pink-500/10 p-3 rounded-xl">
+                      <FaInstagram className="text-xl text-pink-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        اینستاگرام
+                      </div>
+                      <div className="font-medium ltr">
+                        @{editedProfile?.instagram_id || "درحال بررسی"}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div className="w-32 h-32 mx-auto mb-4">
+                    <ProfileAvatar profile={profile} className="w-32 h-32" />
+                  </div>
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-purple-500/10 p-3 rounded-xl">
+                      <FaUser className="text-xl text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        نام نمایشی
+                      </div>
+                      <div className="font-medium">
+                        {profile?.display_name || "درحال بررسی"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-rose-500/10 p-3 rounded-xl">
+                      <FaBirthdayCake className="text-xl text-rose-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        تاریخ تولد
+                      </div>
+                      <div className="font-medium">
+                        {profile?.birth_date
+                          ? new Date(profile.birth_date).toLocaleDateString(
+                              "fa-IR"
+                            )
+                          : "درحال بررسی"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-emerald-500/10 p-3 rounded-xl">
+                      <FaMapMarkerAlt className="text-xl text-emerald-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">شهر</div>
+                      <div className="font-medium">
+                        {profile?.city || "درحال بررسی"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                    <div className="bg-pink-500/10 p-3 rounded-xl">
+                      <FaInstagram className="text-xl text-pink-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-stone-400 mb-1">
+                        اینستاگرام
+                      </div>
+                      <div className="font-medium ltr">
+                        @{profile?.instagram_id || "درحال بررسی"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
