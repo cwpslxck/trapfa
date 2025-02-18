@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FaGoogle } from "react-icons/fa";
 import { useError } from "@/components/ErrorContext";
 import LoadingPage from "@/components/LoadingPage";
 
@@ -24,7 +25,7 @@ export default function AuthPage() {
     if (
       cachedUser &&
       lastCheck &&
-      now - parseInt(lastCheck) < 3600000 // 1 ساعت
+      now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
     ) {
       router.push("/dashboard");
       return;
@@ -107,7 +108,7 @@ export default function AuthPage() {
     }
   }
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -161,6 +162,7 @@ export default function AuthPage() {
               "ادامه"
             )}
           </button>
+
           <a className="opacity-70 hover:opacity-100 duration-300 text-xs text-center">
             ورود شما به معنای پذیرش قوانین حریم‌خصوصی ترپفا است.
           </a>

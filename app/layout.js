@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
           <div className="max-w-7xl w-full min-h-screen overflow-x-hidden flex flex-col justify-between">
             <div>
               <Header />
-              <main className="px-6 md:px-12 lg:px-16">
+              <main className="px-6 lg:px-0">
                 <ErrorProvider>{children}</ErrorProvider>
               </main>
             </div>

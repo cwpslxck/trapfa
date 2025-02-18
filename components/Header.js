@@ -19,17 +19,17 @@ function Header() {
   }, [pathname]);
 
   const items = [
+    // {
+    //   title: "آهنگ‌ها",
+    //   link: "tracks",
+    // },
     {
-      title: "آهنگ‌ها",
-      link: "tracks",
+      title: "مقاله‌ها",
+      link: "articles",
     },
     {
       title: "هنرمندان",
       link: "artists",
-    },
-    {
-      title: "مقاله‌ها",
-      link: "articles",
     },
   ];
 

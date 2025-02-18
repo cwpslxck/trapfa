@@ -15,338 +15,458 @@ import {
   FaMusic,
   FaPen,
   FaUsers,
-  FaHeart,
-  FaPenAlt,
-  FaTelegramPlane,
+  FaInstagram,
+  FaCheck,
+  FaTimes,
 } from "react-icons/fa";
-import { MdDashboard } from "react-icons/md";
-import { BiSolidQuoteAltLeft } from "react-icons/bi";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    display_name: "",
-    city: "",
-    birth_date: "",
-    bio: "",
-  });
   const { showSuccess, showError } = useError();
   const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedProfile, setEditedProfile] = useState(null);
 
   useEffect(() => {
-    // چک کردن localStorage
-    const cachedUser = localStorage.getItem("cached_user");
-    const lastCheck = localStorage.getItem("last_auth_check");
-    const now = Date.now();
+    const checkUser = async () => {
+      try {
+        // اول چک کردن localStorage
+        const cachedUser = localStorage.getItem("cached_user");
+        const lastCheck = localStorage.getItem("last_auth_check");
+        const now = Date.now();
 
-    if (!cachedUser || !lastCheck) {
-      router.push("/auth");
-      return;
-    }
+        // اگر کمتر از 1 ساعت از آخرین چک گذشته و کاربر در حافظه هست
+        if (
+          cachedUser &&
+          lastCheck &&
+          now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
+        ) {
+          const user = JSON.parse(cachedUser);
+          if (user) {
+            checkAuth();
+            return;
+          }
+        }
 
-    // اگر کمتر از 1 ساعت از آخرین چک گذشته و کاربر در حافظه هست
-    if (now - parseInt(lastCheck) < 3600000) {
-      const userData = JSON.parse(cachedUser);
-      setUser(userData);
+        // اگر در localStorage نبود یا expire شده بود، از سرور چک می‌کنیم
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      // دریافت اطلاعات پروفایل از localStorage
-      const cachedProfile = localStorage.getItem("cached_profile");
-      if (cachedProfile) {
-        setFormData(JSON.parse(cachedProfile));
+        if (userError) throw userError;
+
+        if (!user) {
+          // اگر کاربر لاگین نیست، تمام اطلاعات قبلی را پاک می‌کنیم
+          localStorage.removeItem("cached_user");
+          localStorage.removeItem("last_auth_check");
+          localStorage.removeItem("cached_profile");
+          router.push("/auth");
+          return;
+        }
+
+        // ذخیره در localStorage
+        localStorage.setItem("cached_user", JSON.stringify(user));
+        localStorage.setItem("last_auth_check", Date.now().toString());
+
+        checkAuth();
+      } catch (error) {
+        // در صورت خطا هم اطلاعات را پاک می‌کنیم
+        localStorage.removeItem("cached_user");
+        localStorage.removeItem("last_auth_check");
+        localStorage.removeItem("cached_profile");
+        router.push("/auth");
       }
+    };
 
-      setPageLoading(false);
-      return;
-    }
-
-    // در غیر این صورت از سرور چک می‌کنیم
     checkUser();
   }, []);
 
-  const checkUser = async () => {
+  const checkAuth = async () => {
     try {
+      // اول چک کردن localStorage
+      const cachedProfile = localStorage.getItem("cached_profile");
+      const lastCheck = localStorage.getItem("last_auth_check");
+      const now = Date.now();
+
+      // اگر کمتر از 1 ساعت از آخرین چک گذشته و پروفایل در حافظه هست
+      if (
+        cachedProfile &&
+        lastCheck &&
+        now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
+      ) {
+        const parsedProfile = JSON.parse(cachedProfile);
+        // چک کردن تکمیل بودن پروفایل
+        if (
+          parsedProfile?.display_name &&
+          parsedProfile?.birth_date &&
+          parsedProfile?.city
+        ) {
+          setUser(JSON.parse(localStorage.getItem("cached_user")));
+          setProfile(parsedProfile);
+          setPageLoading(false);
+          return;
+        }
+      }
+
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
+      if (userError) throw userError;
       if (!user) {
         router.push("/auth");
         return;
       }
 
-      const { data: profile } = await supabase
+      // دریافت اطلاعات پروفایل
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .single();
 
-      if (profile) {
-        // ذخیره پروفایل در localStorage
-        localStorage.setItem(
-          "cached_profile",
-          JSON.stringify({
-            display_name: profile.display_name || "",
-            city: profile.city || "",
-            birth_date: profile.birth_date || "",
-            bio: profile.bio || "",
-          })
-        );
-
-        setFormData({
-          display_name: profile.display_name || "",
-          city: profile.city || "",
-          birth_date: profile.birth_date || "",
-          bio: profile.bio || "",
-        });
+      // چک کردن تکمیل بودن پروفایل
+      if (
+        !profileData?.display_name ||
+        !profileData?.birth_date ||
+        !profileData?.city
+      ) {
+        router.push("/verify");
+        return;
       }
 
-      // ذخیره اطلاعات کاربر در localStorage
+      // ذخیره در localStorage
       localStorage.setItem("cached_user", JSON.stringify(user));
-      localStorage.setItem("last_auth_check", Date.now().toString());
+      localStorage.setItem("cached_profile", JSON.stringify(profileData));
+      localStorage.setItem("last_auth_check", now.toString());
 
       setUser(user);
+      setProfile(profileData);
       setPageLoading(false);
     } catch (error) {
-      showError("خطا در بررسی وضعیت کاربر");
+      // در صورت خطا، پاک کردن localStorage و ریدایرکت به auth
+      localStorage.removeItem("cached_user");
+      localStorage.removeItem("cached_profile");
+      localStorage.removeItem("last_auth_check");
+
       router.push("/auth");
+      return;
     }
   };
 
-  async function handleLogout() {
+  const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
-      // پاک کردن تمام اطلاعات کاربر از localStorage
-      localStorage.removeItem("cached_user");
-      localStorage.removeItem("last_auth_check");
-      localStorage.removeItem("cached_profile");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
 
-      showSuccess("با موفقیت از حساب کاربری خارج شدید");
-      router.push("/");
+      localStorage.removeItem("cached_user");
+      localStorage.removeItem("cached_profile");
+      localStorage.removeItem("last_auth_check");
+
+      router.push("/auth");
     } catch (error) {
       showError("خطا در خروج از حساب کاربری");
     }
-  }
+  };
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  const handleEdit = () => {
+    setEditedProfile(profile);
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        user_id: user.id,
-        ...formData,
-        updated_at: new Date(),
-      });
+      // چک کردن وضعیت درخواست verify
+      const { data: verifyRequest, error: verifyError } = await supabase
+        .from("verification_requests")
+        .select("status")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
 
-      if (error) throw error;
+      if (verifyError) throw verifyError;
 
-      showSuccess("اطلاعات پروفایل با موفقیت بروزرسانی شد");
+      // اگر درخواست verify در حال بررسی است، instagram_id رو آپدیت نمی‌کنیم
+      const updatedProfile = {
+        id: user.id,
+        display_name: editedProfile.display_name,
+        birth_date: editedProfile.birth_date,
+        city: editedProfile.city,
+        updated_at: new Date().toISOString(),
+      };
+
+      // فقط اگر درخواست verify نداشت یا approved بود، instagram_id رو آپدیت می‌کنیم
+      if (!verifyRequest?.length || verifyRequest[0].status === "approved") {
+        updatedProfile.instagram_id = editedProfile.instagram_id;
+      }
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert(updatedProfile);
+
+      if (profileError) throw profileError;
+
+      // آپدیت localStorage با اطلاعات جدید
+      const newProfile = { ...editedProfile };
+      // اگر درخواست verify در حال بررسی است، instagram_id قبلی رو حفظ می‌کنیم
+      if (verifyRequest?.length && verifyRequest[0].status === "pending") {
+        newProfile.instagram_id = profile.instagram_id;
+        showSuccess(
+          "اطلاعات بروزرسانی شد. آیدی اینستاگرام پس از تایید درخواست قبلی قابل تغییر است"
+        );
+      } else {
+        showSuccess("اطلاعات با موفقیت بروزرسانی شد");
+      }
+
+      localStorage.setItem("cached_profile", JSON.stringify(newProfile));
+      localStorage.setItem("last_auth_check", Date.now().toString());
+
+      setProfile(newProfile);
       setIsEditing(false);
     } catch (error) {
-      showError("خطا در بروزرسانی پروفایل");
+      showError("خطا در بروزرسانی اطلاعات");
     }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedProfile(null);
+  };
+
+  if (pageLoading) {
+    return <LoadingPage />;
+  }
+
+  // اگر پروفایل نداشت
+  if (!profile) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-8 bg-stone-900/50 p-8 rounded-2xl text-center">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-[1px] rounded-xl w-full">
+            <div className="bg-stone-900 rounded-xl p-6">
+              <FaUser className="text-5xl mx-auto mb-4 text-purple-500" />
+              <h1 className="text-xl font-semibold mb-2">
+                پروفایل شما کامل نیست!
+              </h1>
+              <p className="text-sm text-gray-400 mb-6">
+                برای استفاده از امکانات ترپفا، لطفا پروفایل خود را تکمیل کنید.
+                <br />
+                این فرآیند کمتر از 2 دقیقه طول می‌کشد.
+              </p>
+              <Link
+                href="/verify"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl inline-flex items-center gap-2 hover:from-purple-500 hover:to-pink-500 transition-all"
+              >
+                <FaUserEdit />
+                تکمیل پروفایل
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const quickLinks = [
     {
-      title: "چنل تلگرام",
-      icon: <FaTelegramPlane className="text-blue-500" />,
-      link: "/tracks",
-      desc: "اولین نفر از تغییرات جدید باخبر بشید!",
+      title: "آهنگ‌های من",
+      desc: "لیست آهنگ‌های منتشر شده",
+      link: "/dashboard/songs",
+      icon: <FaMusic className="text-xl text-violet-500" />,
     },
     {
-      title: "جدیدترین ها",
-      icon: <FaMusic className="text-emerald-500" />,
-      link: "/tracks",
-      desc: "مشاهده آهنگ های جدید",
+      title: "مقاله‌های من",
+      desc: "لیست مقالات منتشر شده",
+      link: "/dashboard/articles",
+      icon: <FaPen className="text-xl text-emerald-500" />,
     },
     {
-      title: "آرتیست ها",
-      icon: <FaUsers className="text-red-500" />,
-      link: "/artists",
-      desc: "لیست کاملی از آرتیست ها",
-    },
-    {
-      title: "مقاله ها",
-      icon: <FaPen className="text-violet-500" />,
-      link: "/articles",
-      desc: "مقالات جدید منتشر شده",
+      title: "آرتیست‌ها",
+      desc: "مدیریت آرتیست‌ها",
+      link: "/dashboard/artists",
+      icon: <FaUsers className="text-xl text-blue-500" />,
     },
   ];
 
-  if (!user || pageLoading) {
-    return <LoadingPage />;
-  }
-
   return (
-    <div className="min-h-[60vh] py-8">
-      {/* Profile Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="bg-violet-500/20 p-4 rounded-xl">
-            <MdDashboard className="text-violet-500 size-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">داشبورد</h1>
-            <p className="text-white/60 text-sm">مدیریت حساب کاربری</p>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500/10 text-red-500 px-4 py-2 rounded-xl hover:bg-red-500/20 transition-all"
-        >
-          <FaSignOutAlt />
-          <span className="text-sm">خروج</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Profile Form */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Artist Profile Section */}
-          <div className="bg-gradient-to-br from-violet-500/20 to-violet-500/5 rounded-xl p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h2 className="text-xl font-bold">آرتیست پروفایل</h2>
-                <p className="text-sm text-white/60">
-                  اگر به هر نحوی توی تولید آثار رپفارسی فعالیتی دارید آرتیست
-                  پروفایل خودتونو فعال کنید!
+    <div className="px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {/* Profile Section */}
+        <div className="space-y-8">
+          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 w-full shadow-xl">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  پروفایل
+                </h2>
+                <p className="text-sm text-stone-400 mt-1">
+                  مدیریت اطلاعات شخصی
                 </p>
               </div>
-              <Link
-                href="/dashboard/artist"
-                className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 px-6 py-3 rounded-xl transition-all text-sm"
-              >
-                <FaPenAlt />
-                مشاهده فرم
-              </Link>
+              <div className="flex gap-3">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 transition-all duration-300"
+                      title="ذخیره تغییرات"
+                    >
+                      <FaCheck className="text-lg text-emerald-400" />
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="p-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 transition-all duration-300"
+                      title="انصراف"
+                    >
+                      <FaTimes className="text-lg text-red-400" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleEdit}
+                      className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300"
+                      title="ویرایش پروفایل"
+                    >
+                      <FaUserEdit className="text-lg text-purple-400" />
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300"
+                      title="خروج از حساب"
+                    >
+                      <FaSignOutAlt className="text-lg text-red-400" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          {/*  */}
-          <div className="bg-stone-900/50 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <FaUser className="text-violet-500" />
-              اطلاعات پروفایل
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-6 border-0 p-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-stone-800/50 p-4 rounded-xl">
-                  <label className="flex items-center gap-2 text-sm opacity-70 mb-2">
-                    <FaUser className="text-violet-500" />
-                    نام نمایشی
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.display_name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, display_name: e.target.value })
-                    }
-                    disabled={!isEditing}
-                    className={`bg-stone-800 ${!isEditing ? "opacity-70" : ""}`}
-                  />
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                <div className="bg-purple-500/10 p-3 rounded-xl">
+                  <FaUser className="text-xl text-purple-400" />
                 </div>
-                <div className="bg-stone-800/50 p-4 rounded-xl">
-                  <label className="flex items-center gap-2 text-sm opacity-70 mb-2">
-                    <FaMapMarkerAlt className="text-emerald-500" />
-                    شهر
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    disabled={!isEditing}
-                    className={`bg-stone-800 ${!isEditing ? "opacity-70" : ""}`}
-                  />
-                </div>
-                <div className="bg-stone-800/50 p-4 rounded-xl">
-                  <label className="flex items-center gap-2 text-sm opacity-70 mb-2">
-                    <FaBirthdayCake className="text-rose-500" />
-                    تاریخ تولد
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.birth_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, birth_date: e.target.value })
-                    }
-                    disabled={!isEditing}
-                    className={`bg-stone-800 ${!isEditing ? "opacity-70" : ""}`}
-                  />
+                <div className="flex-1">
+                  <div className="text-sm text-stone-400 mb-1">نام نمایشی</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedProfile.display_name}
+                      onChange={(e) =>
+                        setEditedProfile({
+                          ...editedProfile,
+                          display_name: e.target.value,
+                        })
+                      }
+                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-purple-500/50"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      {profile?.display_name || "درحال بررسی"}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="bg-stone-800/50 p-4 rounded-xl">
-                <label className="flex items-center gap-2 text-sm opacity-70 mb-2">
-                  <BiSolidQuoteAltLeft className="text-blue-500" />
-                  بیوگرافی
-                </label>
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) =>
-                    setFormData({ ...formData, bio: e.target.value })
-                  }
-                  disabled={!isEditing}
-                  placeholder={
-                    !isEditing
-                      ? "بیوگرافی ثبت نشده است"
-                      : "درباره خودت بنویس..."
-                  }
-                  className={`w-full h-32 resize-none bg-stone-800 focus:outline outline-violet-400 ${
-                    !isEditing ? "opacity-70" : ""
-                  }`}
-                />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                <div className="bg-rose-500/10 p-3 rounded-xl">
+                  <FaBirthdayCake className="text-xl text-rose-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm text-stone-400 mb-1">تاریخ تولد</div>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={editedProfile.birth_date}
+                      onChange={(e) =>
+                        setEditedProfile({
+                          ...editedProfile,
+                          birth_date: e.target.value,
+                        })
+                      }
+                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-rose-500/50"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      {profile?.birth_date
+                        ? new Date(profile.birth_date).toLocaleDateString(
+                            "fa-IR"
+                          )
+                        : "درحال بررسی"}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {isEditing ? (
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    className="flex items-center gap-2 bg-violet-500 hover:bg-violet-600 px-6 py-3 rounded-xl transition-all"
-                  >
-                    <FaUserEdit />
-                    ذخیره تغییرات
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-2 bg-stone-800 hover:bg-stone-700 px-6 py-3 rounded-xl transition-all"
-                  >
-                    انصراف
-                  </button>
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                <div className="bg-emerald-500/10 p-3 rounded-xl">
+                  <FaMapMarkerAlt className="text-xl text-emerald-400" />
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 bg-stone-800 hover:bg-stone-700 px-6 py-3 rounded-xl transition-all"
-                >
-                  <FaUserEdit />
-                  ویرایش پروفایل
-                </button>
-              )}
-            </form>
+                <div className="flex-1">
+                  <div className="text-sm text-stone-400 mb-1">شهر</div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedProfile.city}
+                      onChange={(e) =>
+                        setEditedProfile({
+                          ...editedProfile,
+                          city: e.target.value,
+                        })
+                      }
+                      className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/50"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      {profile?.city || "درحال بررسی"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                <div className="bg-pink-500/10 p-3 rounded-xl">
+                  <FaInstagram className="text-xl text-pink-400" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm text-stone-400 mb-1">اینستاگرام</div>
+                  <div className="font-medium ltr">
+                    @{profile?.instagram_id || "درحال بررسی"}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Quick Links */}
-        <div className="space-y-6">
-          <div className="bg-stone-900/50 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">دسترسی سریع</h2>
-            <div className="grid gap-4">
+        {/* Quick Links & Stats */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Quick Links */}
+          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                دسترسی سریع
+              </h2>
+              <p className="text-sm text-stone-400 mt-1">لینک‌های پرکاربرد</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
               {quickLinks.map((item) => (
                 <Link
                   key={item.title}
                   href={item.link}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-black/50 hover:bg-black transition-all group"
+                  className="flex items-center gap-4 p-5 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300 group"
                 >
-                  <div className="bg-white/5 p-3 rounded-lg group-hover:scale-110 transition-transform">
+                  <div className="bg-white/5 p-4 rounded-xl group-hover:scale-110 transition-transform duration-300">
                     {item.icon}
                   </div>
                   <div>
-                    <h3 className="font-medium">{item.title}</h3>
-                    <p className="text-sm text-white/60">{item.desc}</p>
+                    <h3 className="font-medium text-lg mb-1">{item.title}</h3>
+                    <p className="text-sm text-stone-400">{item.desc}</p>
                   </div>
                 </Link>
               ))}
@@ -354,24 +474,33 @@ export default function Dashboard() {
           </div>
 
           {/* Stats Section */}
-          <div className="bg-stone-900/50 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">آمار کلی</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-black/50 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-violet-500">0</div>
-                <div className="text-sm text-white/60">پلی‌لیست</div>
+          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                آمار کلی
+              </h2>
+              <p className="text-sm text-stone-400 mt-1">
+                خلاصه فعالیت‌های شما
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
+                <div className="text-3xl font-bold text-violet-400 mb-2">0</div>
+                <div className="text-sm text-stone-400">پلی‌لیست</div>
               </div>
-              <div className="bg-black/50 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-emerald-500">0</div>
-                <div className="text-sm text-white/60">نظر</div>
+              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
+                <div className="text-3xl font-bold text-emerald-400 mb-2">
+                  0
+                </div>
+                <div className="text-sm text-stone-400">نظر</div>
               </div>
-              <div className="bg-black/50 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-blue-500">0</div>
-                <div className="text-sm text-white/60">لایک</div>
+              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
+                <div className="text-3xl font-bold text-blue-400 mb-2">0</div>
+                <div className="text-sm text-stone-400">لایک</div>
               </div>
-              <div className="bg-black/50 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-red-500">0</div>
-                <div className="text-sm text-white/60">ذخیره</div>
+              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
+                <div className="text-3xl font-bold text-red-400 mb-2">0</div>
+                <div className="text-sm text-stone-400">ذخیره</div>
               </div>
             </div>
           </div>

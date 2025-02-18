@@ -57,6 +57,10 @@ form button {
   @apply bg-violet-500 w-full h-12 flex justify-center items-center rounded-md mt-4;
 }
 
+.verifyformcontainer {
+  @apply min-h-screen w-full md:w-auto flex flex-col justify-center items-center bg-black absolute inset-0 top-0 left-0 z-[51];
+}
+
 #content {
   @apply pb-2;
 }
