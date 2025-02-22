@@ -8,6 +8,7 @@ import LoadingPage from "@/components/LoadingPage";
 import { useError } from "@/components/ErrorContext";
 import {
   FaUserEdit,
+  FaArrowLeft,
   FaSignOutAlt,
   FaUser,
   FaMapMarkerAlt,
@@ -15,6 +16,7 @@ import {
   FaMusic,
   FaPen,
   FaUsers,
+  FaStar,
   FaInstagram,
   FaCheck,
   FaTimes,
@@ -285,8 +287,10 @@ export default function Dashboard() {
         showSuccess(
           "صحت آیدی اینستاگرام شما نیز درحال بررسی توسط ادمین ها است."
         );
+        window.location.reload();
       } else {
         showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
+        window.location.reload();
       }
 
       localStorage.setItem("cached_profile", JSON.stringify(newProfile));
@@ -591,6 +595,29 @@ export default function Dashboard() {
 
         {/* Quick Links & Stats */}
         <div className="lg:col-span-2 space-y-8">
+          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="bg-amber-500/10 p-4 rounded-xl">
+                <FaStar className="text-2xl text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold mb-2">
+                  حساب هنرمندی خود را بسازید!
+                </h2>
+                <p className="text-stone-400 text-sm leading-relaxed mb-4">
+                  آیا شما یک هنرمند هستید؟ با ساخت حساب هنرمندی، می‌توانید آثار
+                  خود را به اشتراک بگذارید و با طرفداران خود در ارتباط باشید.
+                </p>
+                <Link
+                  href="/artist/register"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  <span>ساخت حساب هنرمندی</span>
+                  <FaArrowLeft className="text-sm" />
+                </Link>
+              </div>
+            </div>
+          </div>
           {/* Quick Links */}
           <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
             <div className="mb-8">
@@ -615,38 +642,6 @@ export default function Dashboard() {
                   </div>
                 </Link>
               ))}
-            </div>
-          </div>
-
-          {/* Stats Section */}
-          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                آمار کلی
-              </h2>
-              <p className="text-sm text-stone-400 mt-1">
-                خلاصه فعالیت‌های شما
-              </p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
-                <div className="text-3xl font-bold text-violet-400 mb-2">0</div>
-                <div className="text-sm text-stone-400">پلی‌لیست</div>
-              </div>
-              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
-                <div className="text-3xl font-bold text-emerald-400 mb-2">
-                  0
-                </div>
-                <div className="text-sm text-stone-400">نظر</div>
-              </div>
-              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
-                <div className="text-3xl font-bold text-blue-400 mb-2">0</div>
-                <div className="text-sm text-stone-400">لایک</div>
-              </div>
-              <div className="bg-black/20 p-6 rounded-xl hover:bg-black/30 transition-all duration-300">
-                <div className="text-3xl font-bold text-red-400 mb-2">0</div>
-                <div className="text-sm text-stone-400">ذخیره</div>
-              </div>
             </div>
           </div>
         </div>
