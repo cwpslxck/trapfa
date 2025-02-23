@@ -3,12 +3,13 @@ import { supabase } from "@/lib/supabase";
 
 export const revalidate = 3600; // کش کردن برای 1 ساعت
 
-export async function GET() {
+export async function GET(request, { params }) {
   try {
     const { data, error } = await supabase
       .from("tracks")
       .select("*")
-      .order("created_at", { ascending: false });
+      .eq("url", params.url)
+      .single();
 
     if (error) throw error;
 
@@ -18,9 +19,9 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching tracks:", error);
+    console.error("Error fetching track:", error);
     return NextResponse.json(
-      { error: "Error fetching tracks" },
+      { error: "Error fetching track" },
       { status: 500 }
     );
   }

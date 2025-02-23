@@ -1,11 +1,33 @@
 "use client";
-import { createContext, useContext, useState } from "react";
-import { MdErrorOutline, MdCheckCircleOutline } from "react-icons/md";
+import { createContext, useContext, useState, useEffect } from "react";
+import {
+  MdErrorOutline,
+  MdCheckCircleOutline,
+  MdWifiOff,
+} from "react-icons/md";
 
 const ErrorContext = createContext();
 
 export function ErrorProvider({ children }) {
   const [messages, setMessages] = useState([]);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    // چک کردن وضعیت اتصال در لود اولیه
+    setIsOffline(!navigator.onLine);
+
+    // لیسنرها برای تغییر وضعیت اتصال
+    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => setIsOffline(false);
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
 
   const showError = (message) => {
     setMessages((prev) => [...prev, { type: "error", text: message }]);
@@ -24,7 +46,7 @@ export function ErrorProvider({ children }) {
   return (
     <ErrorContext.Provider value={{ showError, showSuccess }}>
       {children}
-      <Toast messages={messages} />
+      <Toast messages={messages} isOffline={isOffline} />
     </ErrorContext.Provider>
   );
 }
@@ -33,9 +55,18 @@ export function useError() {
   return useContext(ErrorContext);
 }
 
-function Toast({ messages }) {
+function Toast({ messages, isOffline }) {
   return (
     <div className="fixed right-0 top-5 flex flex-col gap-2 z-50 w-full lg:max-w-sm px-5">
+      {/* نمایش وضعیت آفلاین */}
+      {isOffline && (
+        <div className="border-yellow-600/80 bg-yellow-600/20 backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg inline-flex gap-1.5 items-center border">
+          <MdWifiOff size={16} />
+          اتصال به اینترنت قطع شده. ممکنه بخاطر vpn باشه!
+        </div>
+      )}
+
+      {/* نمایش سایر پیام‌ها */}
       {messages.slice(-4).map((message, index) => (
         <div
           key={index}

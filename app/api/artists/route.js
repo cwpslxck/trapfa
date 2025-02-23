@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
-import { getAllArtists } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
-export async function GET(request) {
-  const artists = await getAllArtists();
-  return NextResponse.json(artists || []);
+export const revalidate = 3600; // کش کردن برای 1 ساعت
+
+export async function GET() {
+  try {
+    const { data, error } = await supabase
+      .from("artists")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching artists:", error);
+    return NextResponse.json(
+      { error: "Error fetching artists" },
+      { status: 500 }
+    );
+  }
 }

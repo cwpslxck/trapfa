@@ -22,10 +22,6 @@ function Header() {
   }, [pathname]);
 
   const items = [
-    // {
-    //   title: "آهنگ‌ها",
-    //   link: "tracks",
-    // },
     {
       title: "مقاله‌ها",
       link: "articles",
@@ -34,6 +30,10 @@ function Header() {
       title: "هنرمندان",
       link: "artists",
     },
+    // {
+    //   title: "آهنگ‌ها",
+    //   link: "tracks",
+    // },
   ];
 
   const handleNavigation = (path) => {
@@ -43,7 +43,7 @@ function Header() {
   return (
     <>
       {/* Mobile Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-lg bg-black/70">
+      <header className="sticky py-2 top-0 z-50 backdrop-blur-lg bg-black/70">
         <nav className="flex items-center justify-between h-16 px-4">
           {/* Menu & Logo */}
           <div className="flex items-center gap-3">
@@ -76,7 +76,7 @@ function Header() {
             <a
               href="https://t.me/trxpfa"
               target="_blank"
-              className="hidden md:flex items-center gap-2 text-violet-500"
+              className="hidden md:flex items-center gap-1 text-violet-500"
             >
               <span className="font-medium">چنل تلگرام</span>
               <MdElectricBolt className="animate-spin" />
@@ -93,6 +93,7 @@ function Header() {
                     width={28}
                     height={28}
                     className="w-full h-full object-cover"
+                    draggable={false}
                   />
                 </div>
                 <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
@@ -101,10 +102,11 @@ function Header() {
               </Link>
             ) : (
               <Link
-                href="/auth"
-                className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
+                href="/dashboard"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-600 transition-all"
               >
                 <FaUser className="text-lg" />
+                <span className="font-medium">حساب کاربری</span>
               </Link>
             )}
           </div>

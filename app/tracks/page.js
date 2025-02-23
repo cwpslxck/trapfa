@@ -3,80 +3,59 @@ import React, { useEffect, useState } from "react";
 import LoadingPart from "@/components/LoadingPart";
 import MusicParts from "@/components/MusicParts";
 import Title from "@/components/Title";
+import { useError } from "@/components/ErrorContext";
 
 function SongsPage() {
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { showError } = useError();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const cachedData = localStorage.getItem("cachedTracks");
-        const cachedTimestamp = localStorage.getItem("cachedTimestamp");
-
-        if (cachedData && cachedTimestamp) {
-          const currentTime = new Date().getTime();
-          const cacheDuration = 15 * 60 * 1000;
-
-          if (currentTime - parseInt(cachedTimestamp) < cacheDuration) {
-            setTracks(JSON.parse(cachedData));
-            setLoading(false);
-            return;
-          }
-        }
-
         const response = await fetch("/api/songs");
-
-        if (!response.ok) {
-          throw new Error("خطا در دریافت داده‌ها");
-        }
-
+        if (!response.ok) throw new Error("خطا در دریافت داده‌ها");
         const data = await response.json();
         setTracks(data);
-        localStorage.setItem("cachedTracks", JSON.stringify(data));
-        localStorage.setItem(
-          "cachedTimestamp",
-          new Date().getTime().toString()
-        );
       } catch (error) {
-        setError(error.message);
+        showError("خطا در دریافت آهنگ‌ها");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-
-    const interval = setInterval(fetchData, 15 * 60 * 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div>
+    <>
       <Title
-        title={"جدیدترین ها"}
-        desc={"لیستی از جدیدترین آهنگ های منتشر شده توسط آرتیست های نسل جدید"}
+        title={"آهنگ‌ها"}
+        desc={"لیستی از آهنگ‌های منتشر شده از هنرمندان"}
       />
-      {loading || error ? (
+      {loading ? (
         <LoadingPart />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {tracks.map((track, i) => (
-            <MusicParts
-              key={i}
-              title={track.title}
-              artistMain={track.artist_url}
-              cover={track.cover}
-              spotify={track.spotify}
-              soundcloud={track.soundcloud}
-              youtube={track.youtube}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tracks.length > 0 ? (
+            tracks.map((track) => (
+              <MusicParts
+                key={track.id}
+                url={track.url}
+                title={track.title}
+                artist={track.artist}
+                image={track.image}
+                date={track.release_date}
+              />
+            ))
+          ) : (
+            <p className="text-center text-gray-400 col-span-full">
+              هیچ آهنگی یافت نشد.
+            </p>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 

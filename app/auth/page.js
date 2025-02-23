@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { FaGoogle } from "react-icons/fa";
 import { useError } from "@/components/ErrorContext";
 import LoadingPage from "@/components/LoadingPage";
 

@@ -8,6 +8,7 @@ import LoadingPage from "@/components/LoadingPage";
 import { useError } from "@/components/ErrorContext";
 import {
   FaUserEdit,
+  FaUserShield,
   FaArrowLeft,
   FaSignOutAlt,
   FaUser,
@@ -22,6 +23,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import Image from "next/image";
+import { MdSettings } from "react-icons/md";
 
 const ProfileAvatar = ({ profile, className }) => {
   return (
@@ -30,6 +32,7 @@ const ProfileAvatar = ({ profile, className }) => {
       alt={profile?.display_name || "User Avatar"}
       width={128}
       height={128}
+      draggable={false}
       className={`rounded-full object-cover ${className}`}
     />
   );
@@ -284,9 +287,9 @@ export default function Dashboard() {
       if (verifyRequest?.length && verifyRequest[0].status === "pending") {
         newProfile.instagram_id = profile.instagram_id;
         showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
-        showSuccess(
-          "صحت آیدی اینستاگرام شما نیز درحال بررسی توسط ادمین ها است."
-        );
+        // showSuccess(
+        //   "صحت آیدی اینستاگرام شما نیز درحال بررسی توسط ادمین ها است."
+        // );
         window.location.reload();
       } else {
         showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
@@ -368,7 +371,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="px-4 py-8">
+    <div className="py-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         {/* Profile Section */}
         <div className="space-y-8">
@@ -464,7 +467,7 @@ export default function Dashboard() {
                             display_name: e.target.value,
                           })
                         }
-                        className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-purple-500/50"
+                        className="rtl w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-purple-500/50"
                       />
                     </div>
                   </div>
@@ -506,24 +509,26 @@ export default function Dashboard() {
                             city: e.target.value,
                           })
                         }
-                        className="w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/50"
+                        className="rtl w-full bg-black/30 rounded-lg px-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/50"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                    <div className="bg-pink-500/10 p-3 rounded-xl">
-                      <FaInstagram className="text-xl text-pink-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-stone-400 mb-1">
-                        اینستاگرام
+                  {profile?.instagram_id && (
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                      <div className="bg-pink-500/10 p-3 rounded-xl">
+                        <FaInstagram className="text-xl text-pink-400" />
                       </div>
-                      <div className="font-medium ltr">
-                        @{editedProfile?.instagram_id || "درحال بررسی"}
+                      <div className="flex-1">
+                        <div className="text-sm text-stone-400 mb-1">
+                          اینستاگرام
+                        </div>
+                        <div className="font-medium ltr">
+                          @{editedProfile?.instagram_id || "درحال بررسی"}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -574,19 +579,33 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                    <div className="bg-pink-500/10 p-3 rounded-xl">
-                      <FaInstagram className="text-xl text-pink-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-stone-400 mb-1">
-                        اینستاگرام
+                  {profile?.instagram_id && (
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
+                      <div className="bg-pink-500/10 p-3 rounded-xl">
+                        <FaInstagram className="text-xl text-pink-400" />
                       </div>
-                      <div className="font-medium ltr">
-                        @{profile?.instagram_id || "درحال بررسی"}
+                      <div className="flex-1">
+                        <div className="text-sm text-stone-400 mb-1">
+                          اینستاگرام
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Admin Panel */}
+                  {profile?.admin !== 0 && (
+                    <button
+                      onClick={() => router.push("/admin")}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-violet-800/20 hover:bg-violet-800/30 transition-all duration-300"
+                    >
+                      <div className="bg-violet-500/10 p-3 rounded-xl">
+                        <MdSettings className="text-xl text-pink-400 animate-spin" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-start">ادمین پنل</div>
+                      </div>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -610,7 +629,7 @@ export default function Dashboard() {
                 </p>
                 <Link
                   href="/artist/register"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 text-white px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
                 >
                   <span>ساخت حساب هنرمندی</span>
                   <FaArrowLeft className="text-sm" />

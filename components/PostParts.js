@@ -2,19 +2,16 @@ import Link from "next/link";
 import Image from "next/image";
 import loading from "@/public/loadings/article.jpg";
 
-function PostParts({ url, title, desc, img }) {
+function PostParts({ url, title, desc, img, date }) {
   return (
-    <div
-      href={`/articles/${url}`}
-      className="w-full bg-stone-900 hover:bg-stone-900/80 transition-opacity text-white rounded-xl shadow shadow-black/10"
-    >
+    <div className="w-full bg-stone-900 hover:bg-stone-900/80 transition-opacity text-white rounded-xl shadow shadow-black/10">
       <Link href={`/articles/${url}`}>
         <Image
           draggable="false"
           width={400}
           height={285}
           loading="lazy"
-          className="w-full h-52 rounded-t-xl object-cover invert"
+          className="w-full aspect-[16/9] rounded-t-xl object-cover"
           alt={title || "Image"}
           src={img || loading}
         />
@@ -22,8 +19,8 @@ function PostParts({ url, title, desc, img }) {
       <div className="h-auto flex flex-col">
         <div className="w-full h-12 p-1 flex justify-between items-end -mt-12">
           <div className="flex gap-1">
-            <div className="bg-red-500/80 backdrop-blur text-white px-2 py-0.5 text-sm font-light rounded-md">
-              پست ویدیویی
+            <div className="bg-violet-500/80 backdrop-blur text-white px-2 py-0.5 text-sm font-light rounded-md">
+              مقاله
             </div>
           </div>
         </div>
@@ -45,7 +42,7 @@ function PostParts({ url, title, desc, img }) {
                 <span>ترپفا</span>
               </Link>
               <div className="text-white px-2 py-0.5 text-sm font-light rounded-md">
-                21:07 25 دی 03
+                {date}
               </div>
             </div>
             <p className="font-extralight leading-snug opacity-80">{desc}</p>
