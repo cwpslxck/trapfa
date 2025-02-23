@@ -1,7 +1,6 @@
 "use client";
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Title from "@/components/Title";
-import { getArtistByUrl } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,14 +8,39 @@ import {
   FaSoundcloud,
   FaSpotify,
   FaTelegramPlane,
-  FaHeadphones,
 } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 import LoadingPart from "@/components/LoadingPart";
+import { useError } from "@/components/ErrorContext";
 
 export default function ArtistDetail({ params }) {
   const { url } = use(params);
-  const artist = use(getArtistByUrl(url));
+  const [artist, setArtist] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { showError } = useError();
+
+  useEffect(() => {
+    const fetchArtist = async () => {
+      try {
+        const response = await fetch(`/api/artists/${url}`);
+        if (!response.ok) throw new Error("Failed to fetch artist");
+
+        const data = await response.json();
+        setArtist(data);
+      } catch (error) {
+        console.error("Error fetching artist:", error);
+        showError("خطا در دریافت اطلاعات هنرمند");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArtist();
+  }, [url]);
+
+  if (loading) {
+    return <LoadingPart />;
+  }
 
   if (!artist) {
     return (
@@ -26,6 +50,14 @@ export default function ArtistDetail({ params }) {
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="flex items-center gap-2">
+        <Link
+          href="/artists"
+          className="flex items-center gap-2 py-2 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 transition-all group w-fit"
+        >
+          <span className="font-medium">بازگشت به لیست هنرمندان</span>
+        </Link>
+      </div>
       {/* Hero Section */}
       <div className="relative h-[40vh] rounded-2xl overflow-hidden">
         <Image
@@ -49,7 +81,7 @@ export default function ArtistDetail({ params }) {
                 <h1 className="text-4xl md:text-5xl font-black">
                   {artist.name || "بدون نام"}
                 </h1>
-                <MdVerified className="text-violet-500 size-6" />
+                {/* badges goes here */}
               </div>
             </div>
             <div>
@@ -65,51 +97,57 @@ export default function ArtistDetail({ params }) {
           </div>
         </div>
       </div>
-
       {/* Social Links & Streaming */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex gap-3">
-          <Link
-            href={artist.instagram || ""}
-            target="_blank"
-            className="bg-gradient-to-br from-purple-600 to-pink-600 p-4 rounded-xl hover:opacity-90 transition-all"
-          >
-            <FaInstagram size={24} />
-          </Link>
-          <Link
-            href={artist.telegram || ""}
-            target="_blank"
-            className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl hover:opacity-90 transition-all"
-          >
-            <FaTelegramPlane size={24} />
-          </Link>
+          {artist.instagram && (
+            <Link
+              href={artist.instagram}
+              target="_blank"
+              className="bg-gradient-to-br from-purple-600 to-pink-600 p-4 rounded-xl hover:opacity-90 transition-all"
+            >
+              <FaInstagram size={24} />
+            </Link>
+          )}
+          {artist.telegram && (
+            <Link
+              href={artist.telegram}
+              target="_blank"
+              className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl hover:opacity-90 transition-all"
+            >
+              <FaTelegramPlane size={24} />
+            </Link>
+          )}
         </div>
 
         <div className="flex gap-4">
-          <Link
-            href={artist.soundcloud || ""}
-            target="_blank"
-            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:opacity-90 transition-all"
-          >
-            <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
-              <FaSoundcloud size={24} />
-              ساندکلود
-            </button>
-          </Link>
+          {artist.soundcloud && (
+            <Link
+              href={artist.soundcloud}
+              target="_blank"
+              className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:opacity-90 transition-all"
+            >
+              <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
+                <FaSoundcloud size={24} />
+                ساندکلود
+              </button>
+            </Link>
+          )}
 
-          <Link
-            href={artist.spotify || ""}
-            target="_blank"
-            className="flex-1 bg-gradient-to-r from-green-500 to-green-600 rounded-xl hover:opacity-90 transition-all"
-          >
-            <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
-              <FaSpotify size={24} />
-              اسپاتیفای
-            </button>
-          </Link>
+          {artist.spotify && (
+            <Link
+              href={artist.spotify}
+              target="_blank"
+              className="flex-1 bg-gradient-to-r from-green-500 to-green-600 rounded-xl hover:opacity-90 transition-all"
+            >
+              <button className="w-full h-full inline-flex justify-center items-center gap-3 font-bold py-4">
+                <FaSpotify size={24} />
+                اسپاتیفای
+              </button>
+            </Link>
+          )}
         </div>
       </div>
-
       {/* Bio Section */}
       {artist.bio && (
         <div className="bg-stone-900 rounded-xl p-6">
@@ -122,7 +160,6 @@ export default function ArtistDetail({ params }) {
           </p>
         </div>
       )}
-
       {/* Tracks Section */}
       <div>
         <Title

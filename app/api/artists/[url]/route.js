@@ -1,27 +1,28 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
-export const revalidate = 3600; // کش کردن برای 1 ساعت
+export const dynamic = "force-dynamic";
 
-export async function GET(request, { params }) {
+export async function GET(req, { params }) {
   try {
-    const { data, error } = await supabase
+    const supabase = createServerComponentClient({ cookies });
+
+    const { data: artist, error } = await supabase
       .from("artists")
       .select("*")
       .eq("url", params.url)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      return NextResponse.json({ error: "Artist not found" }, { status: 404 });
+    }
 
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
-      },
-    });
+    return NextResponse.json(artist);
   } catch (error) {
-    console.error("Error fetching artist:", error);
+    console.error("Server error:", error);
     return NextResponse.json(
-      { error: "Error fetching artist" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

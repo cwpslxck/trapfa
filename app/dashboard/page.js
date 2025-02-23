@@ -24,6 +24,8 @@ import {
 } from "react-icons/fa";
 import Image from "next/image";
 import { MdSettings } from "react-icons/md";
+import { useAuth } from "@/contexts/AuthContext";
+import ArticleThumbnailManager from "@/components/ArticleThumbnailManager";
 
 const ProfileAvatar = ({ profile, className }) => {
   return (
@@ -39,154 +41,78 @@ const ProfileAvatar = ({ profile, className }) => {
 };
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError } = useError();
-  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const router = useRouter();
+  const { showError, showSuccess } = useError();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const checkUser = async () => {
+    const fetchUserData = async () => {
       try {
-        // اول چک کردن localStorage
-        const cachedUser = localStorage.getItem("cached_user");
-        const lastCheck = localStorage.getItem("last_auth_check");
-        const now = Date.now();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          router.push("/");
+          return;
+        }
 
-        // اگر کمتر از 1 ساعت از آخرین چک گذشته و کاربر در حافظه هست
-        if (
-          cachedUser &&
-          lastCheck &&
-          now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
-        ) {
-          const user = JSON.parse(cachedUser);
-          if (user) {
-            checkAuth();
+        // چک کردن localStorage
+        const cachedData = localStorage.getItem("profile");
+        const cachedTimestamp = localStorage.getItem("profile_timestamp");
+
+        // اگر کش معتبر بود، از اون استفاده کن
+        if (cachedData && cachedTimestamp) {
+          const CACHE_TIME = 5 * 60 * 1000; // 5 دقیقه
+          if (Date.now() - parseInt(cachedTimestamp) < CACHE_TIME) {
+            setProfile(JSON.parse(cachedData));
+            setEditedProfile(JSON.parse(cachedData));
+            setPageLoading(false);
             return;
           }
         }
 
-        // اگر در localStorage نبود یا expire شده بود، از سرور چک می‌کنیم
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        // اگر کش نبود یا منقضی شده بود، درخواست جدید بفرست
+        const response = await fetch("/api/me", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-        if (userError) throw userError;
-
-        if (!user) {
-          // اگر کاربر لاگین نیست، تمام اطلاعات قبلی را پاک می‌کنیم
-          localStorage.removeItem("cached_user");
-          localStorage.removeItem("last_auth_check");
-          localStorage.removeItem("cached_profile");
-          router.push("/auth");
-          return;
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
         }
 
-        // ذخیره در localStorage
-        localStorage.setItem("cached_user", JSON.stringify(user));
-        localStorage.setItem("last_auth_check", Date.now().toString());
+        const userData = await response.json();
 
-        checkAuth();
+        // ذخیره در localStorage
+        localStorage.setItem("profile", JSON.stringify(userData));
+        localStorage.setItem("profile_timestamp", Date.now().toString());
+
+        setProfile(userData);
+        setEditedProfile(userData);
       } catch (error) {
-        // در صورت خطا هم اطلاعات را پاک می‌کنیم
-        localStorage.removeItem("cached_user");
-        localStorage.removeItem("last_auth_check");
-        localStorage.removeItem("cached_profile");
+        console.error("Error:", error);
+        showError("خطا در دریافت اطلاعات پروفایل");
         router.push("/auth");
+      } finally {
+        setPageLoading(false);
       }
     };
 
-    checkUser();
+    fetchUserData();
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      // اول چک کردن localStorage
-      const cachedProfile = localStorage.getItem("cached_profile");
-      const lastCheck = localStorage.getItem("last_auth_check");
-      const now = Date.now();
-
-      // اگر کمتر از 1 ساعت از آخرین چک گذشته و پروفایل در حافظه هست
-      if (
-        cachedProfile &&
-        lastCheck &&
-        now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
-      ) {
-        const parsedProfile = JSON.parse(cachedProfile);
-        // چک کردن تکمیل بودن پروفایل
-        if (
-          parsedProfile?.display_name &&
-          parsedProfile?.birth_date &&
-          parsedProfile?.city
-        ) {
-          setUser(JSON.parse(localStorage.getItem("cached_user")));
-          setProfile(parsedProfile);
-          setPageLoading(false);
-          return;
-        }
-      }
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) throw userError;
-      if (!user) {
-        router.push("/auth");
-        return;
-      }
-
-      // دریافت اطلاعات پروفایل
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      // چک کردن تکمیل بودن پروفایل
-      if (
-        !profileData?.display_name ||
-        !profileData?.birth_date ||
-        !profileData?.city
-      ) {
-        router.push("/verify");
-        return;
-      }
-
-      // ذخیره در localStorage
-      localStorage.setItem("cached_user", JSON.stringify(user));
-      localStorage.setItem("cached_profile", JSON.stringify(profileData));
-      localStorage.setItem("last_auth_check", now.toString());
-
-      setUser(user);
-      setProfile(profileData);
-      setPageLoading(false);
-    } catch (error) {
-      // در صورت خطا، پاک کردن localStorage و ریدایرکت به auth
-      localStorage.removeItem("cached_user");
-      localStorage.removeItem("cached_profile");
-      localStorage.removeItem("last_auth_check");
-
-      router.push("/auth");
-      return;
-    }
-  };
 
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
-      localStorage.removeItem("cached_user");
-      localStorage.removeItem("cached_profile");
-      localStorage.removeItem("last_auth_check");
 
       router.push("/auth");
     } catch (error) {
@@ -218,30 +144,14 @@ export default function Dashboard() {
       let avatarUrl = profile.avatar_url;
 
       if (avatarFile) {
-        // پاک کردن عکس قبلی اگر وجود داشت
-        if (profile.avatar_url) {
-          const oldFilePath = profile.avatar_url.split("/").pop(); // گرفتن نام فایل از URL
-          const { error: deleteError } = await supabase.storage
-            .from("avatars")
-            .remove([`avatars/${oldFilePath}`]);
-
-          if (deleteError) {
-            console.error("خطا در حذف عکس قبلی:", deleteError);
-            // ادامه میدیم چون خطای حذف نباید مانع آپلود عکس جدید بشه
-          }
-        }
-
-        // آپلود عکس جدید
+        // آپلود آواتار جدید
         const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+        const fileName = `${editedProfile.id}_${Date.now()}.${fileExt}`;
         const filePath = `avatars/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(filePath, avatarFile, {
-            cacheControl: "3600",
-            upsert: false,
-          });
+          .upload(filePath, avatarFile);
 
         if (uploadError) throw uploadError;
 
@@ -252,57 +162,39 @@ export default function Dashboard() {
         avatarUrl = publicUrl;
       }
 
-      // چک کردن وضعیت درخواست verify
-      const { data: verifyRequest, error: verifyError } = await supabase
-        .from("verification_requests")
-        .select("status")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (verifyError) throw verifyError;
+      // آپدیت پروفایل از طریق API
+      const response = await fetch("/api/me", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          display_name: editedProfile.display_name,
+          birth_date: editedProfile.birth_date,
+          city: editedProfile.city,
+          avatar_url: avatarUrl,
+        }),
+      });
 
-      const updatedProfile = {
-        id: user.id,
-        display_name: editedProfile.display_name,
-        birth_date: editedProfile.birth_date,
-        city: editedProfile.city,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      };
+      if (!response.ok) throw new Error("Failed to update profile");
 
-      // فقط اگر درخواست verify نداشت یا approved بود، instagram_id رو آپدیت می‌کنیم
-      if (!verifyRequest?.length || verifyRequest[0].status === "approved") {
-        updatedProfile.instagram_id = editedProfile.instagram_id;
-      }
+      // پاک کردن کش
+      localStorage.removeItem("profile");
+      localStorage.removeItem("profile_timestamp");
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert(updatedProfile);
-
-      if (profileError) throw profileError;
-
-      // آپدیت localStorage
-      const newProfile = { ...editedProfile, avatar_url: avatarUrl };
-      if (verifyRequest?.length && verifyRequest[0].status === "pending") {
-        newProfile.instagram_id = profile.instagram_id;
-        showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
-        // showSuccess(
-        //   "صحت آیدی اینستاگرام شما نیز درحال بررسی توسط ادمین ها است."
-        // );
-        window.location.reload();
-      } else {
-        showSuccess("اطلاعات با موفقیت بروزرسانی شد.");
-        window.location.reload();
-      }
-
-      localStorage.setItem("cached_profile", JSON.stringify(newProfile));
-      localStorage.setItem("last_auth_check", Date.now().toString());
-
-      setProfile(newProfile);
+      // بروزرسانی state
+      setProfile({ ...editedProfile, avatar_url: avatarUrl });
       setIsEditing(false);
       setAvatarFile(null);
       setAvatarPreview(null);
+      showSuccess("اطلاعات با موفقیت بروزرسانی شد");
+      // ریفرش کردن صفحه
+      window.location.reload();
     } catch (error) {
       showError("خطا در بروزرسانی اطلاعات");
     } finally {
@@ -665,6 +557,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* نمایش مدیریت تامبنیل برای ادمین‌ها */}
+      {profile?.role === "admin" && (
+        <div className="mt-8">
+          <ArticleThumbnailManager />
+        </div>
+      )}
     </div>
   );
 }

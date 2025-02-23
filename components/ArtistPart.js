@@ -9,10 +9,6 @@ function ArtistPart({ image, artistName, role, url }) {
       href={`/artists/${url}`}
       className="w-full rounded-xl relative block"
       id={url}
-      onClick={(e) => {
-        e.preventDefault();
-        window.location.href = `/artists/${url}`;
-      }}
     >
       <Image
         draggable="false"

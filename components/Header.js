@@ -7,12 +7,13 @@ import { MdElectricBolt } from "react-icons/md";
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
+import LoadingPart from "@/components/LoadingPart";
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -30,10 +31,10 @@ function Header() {
       title: "هنرمندان",
       link: "artists",
     },
-    // {
-    //   title: "آهنگ‌ها",
-    //   link: "tracks",
-    // },
+    {
+      title: "آهنگ‌ها",
+      link: "tracks",
+    },
   ];
 
   const handleNavigation = (path) => {
@@ -81,7 +82,10 @@ function Header() {
               <span className="font-medium">چنل تلگرام</span>
               <MdElectricBolt className="animate-spin" />
             </a>
-            {user && profile ? (
+
+            {loading ? (
+              <div className="w-20 h-10 rounded-full bg-stone-800 animate-pulse" />
+            ) : user && profile ? (
               <Link
                 href="/dashboard"
                 className="flex items-center gap-3 py-1.5 px-3 rounded-full bg-stone-900 hover:bg-stone-800 transition-all group"

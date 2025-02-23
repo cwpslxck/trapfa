@@ -1,65 +1,86 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const AuthContext = createContext({});
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const checkAuth = async () => {
+  const fetchProfile = async (session) => {
     try {
-      const cachedProfile = localStorage.getItem("cached_profile");
-      const cachedUser = localStorage.getItem("cached_user");
-      const lastCheck = localStorage.getItem("last_auth_check");
-      const now = Date.now();
+      // چک کردن localStorage
+      const cachedData = localStorage.getItem("profile");
+      const cachedTimestamp = localStorage.getItem("profile_timestamp");
 
-      if (
-        cachedProfile &&
-        cachedUser &&
-        lastCheck &&
-        now - parseInt(lastCheck) < 60 * 60 * 1000
-      ) {
-        setUser(JSON.parse(cachedUser));
-        setProfile(JSON.parse(cachedProfile));
-        return;
+      if (cachedData && cachedTimestamp) {
+        const CACHE_TIME = 5 * 60 * 1000; // 5 دقیقه
+        if (Date.now() - parseInt(cachedTimestamp) < CACHE_TIME) {
+          setProfile(JSON.parse(cachedData));
+          return;
+        }
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      // اگر کش نبود یا منقضی شده بود
+      const response = await fetch("/api/me", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        setUser(user);
-        setProfile(profileData);
+      if (response.ok) {
+        const userData = await response.json();
+        localStorage.setItem("profile", JSON.stringify(userData));
+        localStorage.setItem("profile_timestamp", Date.now().toString());
+        setProfile(userData);
+      } else {
+        throw new Error("Failed to fetch profile");
       }
     } catch (error) {
-      console.error("Error checking auth status:", error);
+      console.error("Profile fetch error:", error);
+      setProfile(null);
     }
   };
 
   useEffect(() => {
-    checkAuth();
+    const initAuth = async () => {
+      try {
+        setLoading(true);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-    // لیسنر برای تغییرات auth
+        setUser(session?.user || null);
+
+        if (session?.user) {
+          await fetchProfile(session);
+        } else {
+          setProfile(null);
+          localStorage.removeItem("profile");
+          localStorage.removeItem("profile_timestamp");
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN") {
-        checkAuth();
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null);
+
+      if (session?.user) {
+        await fetchProfile(session);
+      } else {
         setProfile(null);
-        localStorage.removeItem("cached_user");
-        localStorage.removeItem("cached_profile");
-        localStorage.removeItem("last_auth_check");
+        localStorage.removeItem("profile");
+        localStorage.removeItem("profile_timestamp");
       }
     });
 
@@ -67,10 +88,12 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, profile, checkAuth }}>
+    <AuthContext.Provider value={{ user, profile, loading }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
