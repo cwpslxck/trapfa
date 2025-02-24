@@ -96,3 +96,26 @@ form button {
 .ltr {
   direction: ltr;
 }
+
+article {
+  @apply max-w-none text-gray-300 leading-relaxed space-y-4 text-justify;
+}
+
+article p {
+  @apply text-justify;
+}
+
+article h2 {
+  @apply text-2xl font-bold;
+}
+
+article a {
+  @apply text-violet-400 hover:text-violet-500;
+}
+
+article a.user {
+  @apply bg-violet-500 text-white font-semibold rounded-lg mx-1.5;
+}
+
+/* article a.playlink */
+/* article a. artist link */

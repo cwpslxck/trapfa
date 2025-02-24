@@ -6,7 +6,7 @@ import loading from "@/public/loadings/artist.jpg";
 function ArtistPart({ image, artistName, role, url }) {
   return (
     <Link
-      href={`/artists/${url}`}
+      href={`/x/${url}`}
       className="w-full rounded-xl relative block"
       id={url}
     >

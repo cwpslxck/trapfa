@@ -1,108 +1,169 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import LoadingPart from "@/components/LoadingPart";
+import { useError } from "@/components/ErrorContext";
 import BannerAds from "@/components/BannerAds";
-import Comments from "@/components/Comments";
 import Image from "next/image";
 import Link from "next/link";
-import { FaCalendar, FaPenAlt } from "react-icons/fa";
+import { FaCalendar, FaUser, FaHome, FaBookOpen } from "react-icons/fa";
 
-function PostsSpecific() {
-  // fetch from db where {url} is folan
+export default function PostPage() {
+  const { url } = useParams();
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { showError } = useError();
+
+  useEffect(() => {
+    const loadPost = async () => {
+      try {
+        const response = await fetch(`/api/posts`);
+        const { feed: xmlText } = await response.json();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+        const items = xmlDoc.getElementsByTagName("item");
+
+        const foundPost = Array.from(items).find((item) => {
+          const link = item.getElementsByTagName("link")[0]?.textContent || "";
+          return link.includes(url) || link.split("/").pop() === url;
+        });
+
+        if (foundPost) {
+          const mediaContent =
+            foundPost.getElementsByTagName("media:content")[0];
+          const imageUrl =
+            mediaContent?.getAttribute("url") || "/default-article.jpg";
+
+          setPost({
+            title:
+              foundPost.getElementsByTagName("title")[0]?.textContent || "",
+            content:
+              foundPost.getElementsByTagName("description")[0]?.textContent ||
+              "",
+            author:
+              foundPost.getElementsByTagName("author")[0]?.textContent ||
+              "ترپفا",
+            date: new Date(
+              foundPost.getElementsByTagName("pubDate")[0]?.textContent || ""
+            ).toLocaleDateString("fa-IR"),
+            image: imageUrl,
+          });
+        } else {
+          throw new Error("پست یافت نشد");
+        }
+      } catch (error) {
+        console.error("خطا در بارگذاری پست:", error);
+        showError("خطا در دریافت پست");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPost();
+  }, [url]);
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-[50vh] flex items-center justify-center">
+        <LoadingPart />
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="w-full min-h-[50vh] flex flex-col items-center justify-center gap-4">
+        <p className="text-xl text-gray-400">پست موردنظر یافت نشد.</p>
+        <Link
+          href="/posts"
+          className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors"
+        >
+          <FaBookOpen className="w-4 h-4" />
+          بازگشت به لیست مقاله‌ها
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-0 md:px-16 lg:px-32 w-full flex flex-col items-center">
-      <div className="w-full max-w-3xl">
-        <div className="pb-4 px-0 lg:px-8">
+    <div className="w-full flex flex-col items-center min-h-screen">
+      <div className="w-full max-w-4xl py-8">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-3 text-sm text-gray-400 mb-8">
+          <Link
+            href="/"
+            className="flex items-center gap-2 hover:text-white transition-colors"
+          >
+            <FaHome className="w-4 h-4" />
+            <span>خانه</span>
+          </Link>
+          <span>/</span>
+          <Link href="/posts" className="hover:text-white transition-colors">
+            مقاله‌ها
+          </Link>
+          <span>/</span>
+          <span className="text-gray-500 truncate">{post.title}</span>
+        </nav>
+
+        {/* Hero Section */}
+        <div className="relative w-full aspect-video mb-8 rounded-2xl overflow-hidden">
           <Image
-            draggable="false"
-            width={600}
-            height={500}
-            loading="lazy"
-            className="w-full rounded-xl"
-            alt={"Image"}
-            src={"/post1.webp"}
+            src={post.image}
+            alt={post.title}
+            fill
+            className="object-cover"
+            priority
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60" />
         </div>
-        <div>
-          <div>
-            <div className="flex flex-row gap-1 font-thin opacity-70 justify-center items-center">
-              <Link href={"/"}>ترپفا</Link>/
-              <Link href={"/articles/"}>مقاله ها</Link>/
-              <Link href={"/articles/folan"}>
-                ترپفا: ما کی هستیم و هدفمون چیه؟
-              </Link>
+
+        {/* Post Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-white leading-tight">
+            {post.title}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-6 text-gray-400">
+            <div className="flex items-center gap-2">
+              <FaUser className="w-4 h-4" />
+              <span>{post.author}</span>
             </div>
-            <h1 className="text-5xl font-extrabold text-center leading-tight">
-              ترپفا: ما کی هستیم و هدفمون چیه؟
-            </h1>
-            <div className="px-0 lg:px-8">
-              <p className="opacity-80 font-extralight pt-2">
-                سشتیشمتمشت منتمشتم تمنشت ت منتمش یتشی تمنتمنشتیمشتمنتمن منیت منی
-                شمنیتشمنیت م
-              </p>
+            <div className="flex items-center gap-2">
+              <FaCalendar className="w-4 h-4" />
+              <span>{post.date}</span>
             </div>
           </div>
         </div>
-        <div className="pt-2">
+
+        {/* Banner Ads */}
+        <div className="my-8">
           <BannerAds />
         </div>
-      </div>
-      <div className="bg-stone-900 rounded-xl mt-4 p-3 max-w-3xl">
-        <div id="content" className="text-lg font-light select-none">
-          <h2>چی شد که ترپفا به وجود اومد؟</h2>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <h2>چی شد که ترپفا به وجود اومد؟</h2>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <h2>چی شد که ترپفا به وجود اومد؟</h2>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
-          <p>
-            اکثر ما وقتی اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-            دورانی که شاهکارهایی مانند کاردی و قرص رو بیرون میداد. اکثر ما وقتی
-            اسم هیپهاپولوژیست میاد یاد اون دوران طلاییش میفتیم.
-          </p>
+
+        {/* Post Content */}
+        <article dangerouslySetInnerHTML={{ __html: post.content }}></article>
+
+        {/* Post Footer */}
+        <div className="mt-12 pt-8 border-t border-stone-800">
+          <div className="flex flex-wrap justify-between items-center gap-4 text-gray-400">
+            <div className="flex items-center gap-2">
+              <FaUser className="w-4 h-4" />
+              <span>نویسنده: {post.author}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <FaCalendar className="w-4 h-4" />
+              <span>تاریخ انتشار: {post.date}</span>
+            </div>
+          </div>
         </div>
-        {/* <div className="w-full opacity-80 mt-5 flex justify-between">
-          <p>نویسنده: cwpslxck</p>
-          <p>3/1/2025</p>
-        </div> */}
+
+        {/* Comments Section */}
+        <div className="mt-12">
+          <div className="text-center bg-stone-950/50 backdrop-blur-sm rounded-xl p-8 border border-stone-800">
+            <p className="text-gray-400">بخش نظرات به زودی اضافه خواهد شد</p>
+          </div>
+        </div>
       </div>
-      <div className="max-w-3xl">{/* <Comments /> */}</div>
     </div>
   );
 }
-
-export default PostsSpecific;
