@@ -59,6 +59,7 @@ export default function Dashboard() {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) {
+          handleSignOut();
           router.push("/");
           return;
         }

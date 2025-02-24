@@ -42,8 +42,6 @@ export default function ArticlesPage() {
             description:
               item.getElementsByTagName("description")[0]?.textContent || "",
             author: item.getElementsByTagName("author")[0]?.textContent || "",
-            category:
-              item.getElementsByTagName("category")[0]?.textContent || "",
             pubDate: item.getElementsByTagName("pubDate")[0]?.textContent || "",
             url: link.split("/").pop() || "",
             thumbnail: thumbnails[link] || "/default-article.jpg",
@@ -53,9 +51,8 @@ export default function ArticlesPage() {
         const processedArticles = posts.map((post) => ({
           link: post.url,
           title: post.title,
-          desc: post.description.substring(0, 200) + "...",
+          desc: post.description,
           author: post.author,
-          category: post.category,
           date: new Date(post.pubDate).toLocaleDateString("fa-IR"),
           image: post.thumbnail,
         }));
@@ -97,7 +94,6 @@ export default function ArticlesPage() {
                 title={post.title}
                 desc={post.desc}
                 author={post.author}
-                category={post.category}
                 date={post.date}
                 image={post.image}
               />

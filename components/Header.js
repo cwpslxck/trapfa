@@ -25,15 +25,15 @@ function Header() {
   const items = [
     {
       title: "مقاله‌ها",
-      link: "articles",
+      link: "posts",
     },
     {
-      title: "هنرمندان",
-      link: "artists",
+      title: "افراد",
+      link: "x",
     },
     {
       title: "آهنگ‌ها",
-      link: "tracks",
+      link: "play",
     },
   ];
 

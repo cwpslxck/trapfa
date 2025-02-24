@@ -52,7 +52,7 @@ export default function ArtistDetail({ params }) {
     <div className="flex flex-col gap-8">
       <div className="flex items-center gap-2">
         <Link
-          href="/artists"
+          href="/x"
           className="flex items-center gap-2 py-2 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 transition-all group w-fit"
         >
           <span className="font-medium">بازگشت به لیست هنرمندان</span>

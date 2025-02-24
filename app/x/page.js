@@ -31,9 +31,9 @@ export default function ArtistsPage() {
   return (
     <div>
       <Title
-        title={"هنرمندان"}
+        title={"افراد"}
         desc={
-          "لیستی از افراد فعال توی نسل جدید موسیقی رپ فارسی از جمله پرودوسرها، کاورآرتیست‌ها و..."
+          "لیستی از افراد فعال در کامیونیتی از جمله: خواننده ها، بیت میکر ها، میکس من ها، گرافیک آرتیست ها و..."
         }
       />
       <BannerAds />
@@ -52,9 +52,7 @@ export default function ArtistsPage() {
               />
             ))
           ) : (
-            <p className="text-center text-gray-400 col-span-full">
-              هیچ هنرمندی یافت نشد.
-            </p>
+            <LoadingPart />
           )}
         </div>
       )}

@@ -10,21 +10,21 @@ function Home() {
     {
       title: "آهنگ‌ها",
       desc: "جدیدترین آهنگ‌های منتشر شده",
-      link: "/tracks",
+      link: "/play",
       icon: <FaHeadphones className="text-4xl mb-4 text-violet-500" />,
       gradient: "from-violet-500/20 to-transparent",
     },
     {
       title: "هنرمندان",
       desc: "لیست کامل آرتیست‌های نسل جدید",
-      link: "/artists",
+      link: "/x",
       icon: <FaUsers className="text-4xl mb-4 text-emerald-500" />,
       gradient: "from-emerald-500/20 to-transparent",
     },
     {
       title: "مقاله‌ها",
       desc: "آخرین مقالات منتشر شده",
-      link: "/articles",
+      link: "/posts",
       icon: <FaNewspaper className="text-4xl mb-4 text-rose-500" />,
       gradient: "from-rose-500/20 to-transparent",
     },
@@ -44,23 +44,6 @@ function Home() {
             پوشش اخبار و اتفاقات نسل جدید موسیقی رپ فارسی. همراه با جدیدترین
             آهنگ‌ها، مقالات و اخبار هنرمندان.
           </p>
-
-          <div className="flex flex-wrap gap-4 pt-4">
-            <Link
-              href="/auth"
-              className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 px-6 py-3 rounded-xl transition-all group font-medium"
-            >
-              <BiLogIn className="group-hover:animate-pulse size-6" />
-              <span>وارد شوید</span>
-            </Link>
-            <Link
-              href="/artists"
-              className="inline-flex items-center gap-2 bg-stone-800 hover:bg-stone-700 px-6 py-3 rounded-xl transition-all font-medium"
-            >
-              <MdWavingHand className="text-yellow-500" />
-              <span>پیداکردن آرتیست‌های جدید</span>
-            </Link>
-          </div>
         </div>
       </div>
 
