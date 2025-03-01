@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-
-export const revalidate = 3600; // کش کردن برای 1 ساعت
+import { apiCache, CACHE_TIME } from "@/lib/cache";
 
 export async function GET() {
   try {
+    // چک کردن کش
+    const cachedData = apiCache.get("artists_list");
+    if (cachedData) {
+      return NextResponse.json(cachedData);
+    }
+
     const { data, error } = await supabase
       .from("artists")
       .select("*")
@@ -12,9 +17,13 @@ export async function GET() {
 
     if (error) throw error;
 
+    // ذخیره در کش با TTL طولانی‌تر
+    apiCache.set("artists_list", data, CACHE_TIME.VERY_LONG);
+
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200",
+        "Cache-Control":
+          "public, s-maxage=86400, stale-while-revalidate=172800",
       },
     });
   } catch (error) {

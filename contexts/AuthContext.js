@@ -1,5 +1,11 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { supabase } from "@/lib/supabase";
 
 const AuthContext = createContext({});
@@ -9,31 +15,17 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (session) => {
+  const fetchProfile = useCallback(async (session) => {
     try {
-      // چک کردن localStorage
-      const cachedData = localStorage.getItem("profile");
-      const cachedTimestamp = localStorage.getItem("profile_timestamp");
-
-      if (cachedData && cachedTimestamp) {
-        const CACHE_TIME = 5 * 60 * 1000; // 5 دقیقه
-        if (Date.now() - parseInt(cachedTimestamp) < CACHE_TIME) {
-          setProfile(JSON.parse(cachedData));
-          return;
-        }
-      }
-
-      // اگر کش نبود یا منقضی شده بود
       const response = await fetch("/api/me", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
+        cache: "force-cache",
       });
 
       if (response.ok) {
         const userData = await response.json();
-        localStorage.setItem("profile", JSON.stringify(userData));
-        localStorage.setItem("profile_timestamp", Date.now().toString());
         setProfile(userData);
       } else {
         throw new Error("Failed to fetch profile");
@@ -42,50 +34,62 @@ export const AuthProvider = ({ children }) => {
       console.error("Profile fetch error:", error);
       setProfile(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const initAuth = async () => {
+    let mounted = true;
+
+    const checkAuth = async () => {
       try {
-        setLoading(true);
         const {
           data: { session },
         } = await supabase.auth.getSession();
 
-        setUser(session?.user || null);
+        if (!mounted) return;
 
-        if (session?.user) {
-          await fetchProfile(session);
-        } else {
+        if (!session) {
+          setUser(null);
           setProfile(null);
-          localStorage.removeItem("profile");
-          localStorage.removeItem("profile_timestamp");
+          setLoading(false);
+          return;
         }
+
+        setUser(session.user);
+        await fetchProfile(session);
       } catch (error) {
-        console.error("Auth error:", error);
+        console.error("Auth check error:", error);
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    initAuth();
+    checkAuth();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user || null);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-      if (session?.user) {
-        await fetchProfile(session);
-      } else {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
         setProfile(null);
-        localStorage.removeItem("profile");
-        localStorage.removeItem("profile_timestamp");
+      } else if (session?.user) {
+        setUser(session.user);
+        await fetchProfile(session);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading }}>

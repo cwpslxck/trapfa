@@ -237,6 +237,7 @@ export default function VerifyPage() {
     } catch (error) {
       showError(error.message);
     } finally {
+      window.location.reload();
       setLoading(false);
     }
   };

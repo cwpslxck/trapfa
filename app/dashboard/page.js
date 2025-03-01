@@ -32,10 +32,10 @@ const ProfileAvatar = ({ profile, className }) => {
     <Image
       src={profile?.avatar_url || "/default-avatar.jpg"}
       alt={profile?.display_name || "User Avatar"}
-      width={128}
-      height={128}
+      width={400}
+      height={400}
       draggable={false}
-      className={`rounded-full object-cover ${className}`}
+      className={`rounded-full bg-black border-2 border-black aspect-square object-cover ${className}`}
     />
   );
 };
@@ -60,26 +60,9 @@ export default function Dashboard() {
         } = await supabase.auth.getSession();
         if (!session) {
           handleSignOut();
-          router.push("/");
           return;
         }
 
-        // چک کردن localStorage
-        const cachedData = localStorage.getItem("profile");
-        const cachedTimestamp = localStorage.getItem("profile_timestamp");
-
-        // اگر کش معتبر بود، از اون استفاده کن
-        if (cachedData && cachedTimestamp) {
-          const CACHE_TIME = 5 * 60 * 1000; // 5 دقیقه
-          if (Date.now() - parseInt(cachedTimestamp) < CACHE_TIME) {
-            setProfile(JSON.parse(cachedData));
-            setEditedProfile(JSON.parse(cachedData));
-            setPageLoading(false);
-            return;
-          }
-        }
-
-        // اگر کش نبود یا منقضی شده بود، درخواست جدید بفرست
         const response = await fetch("/api/me", {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -91,17 +74,10 @@ export default function Dashboard() {
         }
 
         const userData = await response.json();
-
-        // ذخیره در localStorage
-        localStorage.setItem("profile", JSON.stringify(userData));
-        localStorage.setItem("profile_timestamp", Date.now().toString());
-
         setProfile(userData);
         setEditedProfile(userData);
       } catch (error) {
-        console.error("Error:", error);
-        showError("خطا در دریافت اطلاعات پروفایل");
-        router.push("/auth");
+        showError("خطا در دریافت اطلاعات کاربری");
       } finally {
         setPageLoading(false);
       }
@@ -112,12 +88,14 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
       router.push("/auth");
     } catch (error) {
       showError("خطا در خروج از حساب کاربری");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,10 +161,6 @@ export default function Dashboard() {
       });
 
       if (!response.ok) throw new Error("Failed to update profile");
-
-      // پاک کردن کش
-      localStorage.removeItem("profile");
-      localStorage.removeItem("profile_timestamp");
 
       // بروزرسانی state
       setProfile({ ...editedProfile, avatar_url: avatarUrl });
@@ -272,7 +246,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start mb-8">
               <div>
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  پروفایل
+                  {profile?.display_name || "پروفایل"}
                 </h2>
                 <p className="text-sm text-stone-400 mt-1">
                   مدیریت اطلاعات شخصی
@@ -407,7 +381,7 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {profile?.instagram_id && (
+                  {/* {profile?.instagram_id && (
                     <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
                       <div className="bg-pink-500/10 p-3 rounded-xl">
                         <FaInstagram className="text-xl text-pink-400" />
@@ -421,25 +395,12 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   <div className="w-32 h-32 mx-auto mb-4">
                     <ProfileAvatar profile={profile} className="w-32 h-32" />
-                  </div>
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                    <div className="bg-purple-500/10 p-3 rounded-xl">
-                      <FaUser className="text-xl text-purple-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-stone-400 mb-1">
-                        نام نمایشی
-                      </div>
-                      <div className="font-medium">
-                        {profile?.display_name || "درحال بررسی"}
-                      </div>
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
@@ -510,7 +471,7 @@ export default function Dashboard() {
           <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
             <div className="flex items-start gap-4">
               <div className="bg-amber-500/10 p-4 rounded-xl">
-                <FaStar className="text-2xl text-amber-400" />
+                <FaStar className="text-2xl text-amber-500" />
               </div>
               <div>
                 <h2 className="text-xl font-bold mb-2">

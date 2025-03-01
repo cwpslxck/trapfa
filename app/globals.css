@@ -29,7 +29,7 @@
 body {
   @apply bg-black text-white;
   direction: rtl;
-  font-weight: 300;
+  font-weight: 400 700;
 }
 
 .ltr {
@@ -119,3 +119,8 @@ article a.user {
 
 /* article a.playlink */
 /* article a. artist link */
+
+.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+}

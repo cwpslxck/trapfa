@@ -11,6 +11,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingButton, setLoadingButton] = useState(false);
   const { showError, showSuccess } = useError();
   const router = useRouter();
 
@@ -41,32 +42,19 @@ export default function AuthPage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        // ذخیره در localStorage
-        localStorage.setItem("cached_user", JSON.stringify(user));
-        localStorage.setItem("last_auth_check", Date.now().toString());
         router.push("/dashboard");
         return;
       }
 
-      // اگر کاربر لاگین نیست، تمام اطلاعات قبلی را پاک می‌کنیم
-      localStorage.removeItem("cached_user");
-      localStorage.removeItem("last_auth_check");
-      localStorage.removeItem("cached_profile");
-
       setLoading(false);
     } catch (error) {
-      // در صورت خطا هم اطلاعات را پاک می‌کنیم
-      localStorage.removeItem("cached_user");
-      localStorage.removeItem("last_auth_check");
-      localStorage.removeItem("cached_profile");
-
       setLoading(false);
     }
   };
 
   async function handleAuth(event) {
     event.preventDefault();
-    setLoading(true);
+    setLoadingButton(true);
 
     try {
       if (!email || !password) {
@@ -77,10 +65,6 @@ export default function AuthPage() {
         await supabase.auth.signInWithPassword({ email, password });
 
       if (loginData?.user) {
-        // ذخیره در localStorage
-        localStorage.setItem("cached_user", JSON.stringify(loginData.user));
-        localStorage.setItem("last_auth_check", Date.now().toString());
-
         showSuccess("با موفقیت وارد شدید!");
         router.push("/dashboard");
       } else {
@@ -103,23 +87,9 @@ export default function AuthPage() {
     } catch (error) {
       showError(error.message);
     } finally {
-      setLoading(false);
+      setLoadingButton(false);
     }
   }
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      showError("خطا در ورود با گوگل");
-    }
-  };
 
   if (loading) {
     return <LoadingPage />;
@@ -152,8 +122,8 @@ export default function AuthPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button type="submit" disabled={loading}>
-            {loading ? (
+          <button type="submit" disabled={loadingButton}>
+            {loadingButton ? (
               <span className="animate-spin">
                 <AiOutlineLoading3Quarters />
               </span>

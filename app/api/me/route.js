@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-
-// کش برای نگهداری پروفایل‌ها
-const CACHE_TIME = 5 * 60 * 1000; // 5 دقیقه
-const profileCache = new Map();
-
-// تابع پاک کردن کش برای یک کاربر
-const clearUserCache = (userId) => {
-  profileCache.delete(userId);
-};
+import { apiCache, CACHE_TIME } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +13,6 @@ export async function GET(req) {
     }
 
     const token = authHeader.split(" ")[1];
-
     const cookieStore = cookies();
     const supabase = createServerComponentClient({
       cookies: () => cookieStore,
@@ -37,9 +28,9 @@ export async function GET(req) {
     }
 
     // چک کردن کش
-    const cachedProfile = profileCache.get(user.id);
-    if (cachedProfile && Date.now() - cachedProfile.timestamp < CACHE_TIME) {
-      return NextResponse.json(cachedProfile.data);
+    const cachedProfile = apiCache.get(user.id, "profile");
+    if (cachedProfile) {
+      return NextResponse.json(cachedProfile);
     }
 
     // گرفتن پروفایل از دیتابیس
@@ -53,19 +44,20 @@ export async function GET(req) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // ذخیره در کش
     const userData = {
       id: user.id,
       email: user.email,
       ...profile,
     };
 
-    profileCache.set(user.id, {
-      data: userData,
-      timestamp: Date.now(),
-    });
+    // ذخیره در کش با TTL طولانی‌تر
+    apiCache.set(user.id, userData, CACHE_TIME.MEDIUM, "profile");
 
-    return NextResponse.json(userData);
+    return NextResponse.json(userData, {
+      headers: {
+        "Cache-Control": "private, max-age=1800",
+      },
+    });
   } catch (error) {
     console.error("Server error:", error);
     return NextResponse.json(
@@ -75,7 +67,6 @@ export async function GET(req) {
   }
 }
 
-// آپدیت پروفایل
 export async function POST(req) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -85,7 +76,6 @@ export async function POST(req) {
 
     const token = authHeader.split(" ")[1];
     const body = await req.json();
-
     const cookieStore = cookies();
     const supabase = createServerComponentClient({
       cookies: () => cookieStore,
@@ -100,19 +90,16 @@ export async function POST(req) {
       return NextResponse.json({ error: "not connected" }, { status: 401 });
     }
 
-    // آپدیت پروفایل در دیتابیس
     const { error: updateError } = await supabase.from("profiles").upsert({
       id: user.id,
       ...body,
       updated_at: new Date().toISOString(),
     });
 
-    if (updateError) {
-      throw updateError;
-    }
+    if (updateError) throw updateError;
 
-    // پاک کردن کش کاربر
-    clearUserCache(user.id);
+    // پاک کردن کش پروفایل
+    apiCache.clear(user.id, "profile");
 
     return NextResponse.json({ success: true });
   } catch (error) {

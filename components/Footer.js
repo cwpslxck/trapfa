@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { FaTelegramPlane, FaTwitter } from "react-icons/fa";
-import { RiTwitterXFill } from "react-icons/ri";
+import { MdElectricBolt } from "react-icons/md";
 
 export default function Footer() {
   return (
@@ -32,12 +31,12 @@ export default function Footer() {
               تماس با ما
             </Link>
             <a
-              href="https://x.com/trxpfa"
+              href="https://trxpfa.t.me"
               target="_blank"
-              className="flex items-center gap-2 bg-violet-500/10 text-violet-500 px-4 py-2 rounded-lg hover:bg-violet-500/20 transition-colors"
+              className="flex items-center gap-1 bg-violet-500/10 text-violet-500 px-4 py-2 rounded-lg hover:bg-violet-500/20 transition-colors"
             >
-              <RiTwitterXFill />
-              <span className="text-sm">اکس</span>
+              <span className="font-medium">چنل تلگرام</span>
+              <MdElectricBolt className="animate-spin" />
             </a>
           </div>
         </div>
