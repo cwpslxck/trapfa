@@ -27,13 +27,11 @@ function SongsPage() {
     fetchData();
   }, []);
 
-  const artistscount = 3489345;
-
   return (
     <>
       <Title
         title={"آهنگ‌ها"}
-        desc={`لیستی از آهنگ‌های منتشر شده با همکاری ${artistscount} نفر از افراد کامیونیتی`}
+        desc={`لیستی از آهنگ‌های منتشر شده با همکاری افراد کامیونیتی`}
       />
 
       {loading ? (

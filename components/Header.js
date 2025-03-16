@@ -62,7 +62,7 @@ function Header() {
 
     return (
       <Link
-        href="/dashboard"
+        href="/auth"
         className="flex items-center gap-2 p-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-600 transition-all"
       >
         <FaUser className="text-lg" />
@@ -100,7 +100,7 @@ function Header() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 hover:bg-white/10 rounded-xl transition-colors"
+              className="md:hidden p-2 hover:bg-white/10 cursor-pointer rounded-xl transition-colors"
             >
               <RiMenu3Line size={24} />
             </button>
@@ -145,9 +145,9 @@ function Header() {
         >
           <button
             onClick={() => setIsMenuOpen(false)}
-            className="absolute top-5 right-4 p-2 hover:bg-white/10 rounded-xl transition-colors"
+            className="absolute top-5 right-4 p-1.5 hover:bg-white/10 rounded-xl transition-colors"
           >
-            <RiCloseLine size={24} />
+            <RiCloseLine size={28} />
           </button>
 
           <div className="flex-1 flex flex-col justify-center items-center gap-8 px-6">

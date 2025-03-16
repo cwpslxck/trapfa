@@ -124,3 +124,20 @@ article a.user {
   overflow: hidden;
   height: 100vh;
 }
+
+select {
+  appearance: none;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+  padding-left: 32px;
+}
+/* Style the dropdown arrow */
+select::-ms-expand {
+  display: none;
+}
+select option {
+  @apply px-2 my-4;
+}

@@ -25,7 +25,6 @@ import {
 import Image from "next/image";
 import { MdSettings } from "react-icons/md";
 import { useAuth } from "@/contexts/AuthContext";
-import ArticleThumbnailManager from "@/components/ArticleThumbnailManager";
 
 const ProfileAvatar = ({ profile, className }) => {
   return (
@@ -35,7 +34,7 @@ const ProfileAvatar = ({ profile, className }) => {
       width={400}
       height={400}
       draggable={false}
-      className={`rounded-full bg-black border-2 border-black aspect-square object-cover ${className}`}
+      className={`rounded-full bg-black aspect-square object-cover ${className}`}
     />
   );
 };
@@ -380,22 +379,6 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
-
-                  {/* {profile?.instagram_id && (
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                      <div className="bg-pink-500/10 p-3 rounded-xl">
-                        <FaInstagram className="text-xl text-pink-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-stone-400 mb-1">
-                          اینستاگرام
-                        </div>
-                        <div className="font-medium ltr">
-                          @{editedProfile?.instagram_id || "درحال بررسی"}
-                        </div>
-                      </div>
-                    </div>
-                  )} */}
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
@@ -433,19 +416,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {profile?.instagram_id && (
-                    <div className="flex items-center gap-4 p-4 rounded-xl bg-black/20 hover:bg-black/30 transition-all duration-300">
-                      <div className="bg-pink-500/10 p-3 rounded-xl">
-                        <FaInstagram className="text-xl text-pink-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-stone-400 mb-1">
-                          اینستاگرام
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Admin Panel */}
                   {profile?.admin !== 0 && (
                     <button
@@ -468,29 +438,13 @@ export default function Dashboard() {
 
         {/* Quick Links & Stats */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
-            <div className="flex items-start gap-4">
-              <div className="bg-amber-500/10 p-4 rounded-xl">
-                <FaStar className="text-2xl text-amber-500" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold mb-2">
-                  حساب هنرمندی خود را بسازید!
-                </h2>
-                <p className="text-stone-400 text-sm leading-relaxed mb-4">
-                  آیا شما یک هنرمند هستید؟ با ساخت حساب هنرمندی، می‌توانید آثار
-                  خود را به اشتراک بگذارید و با طرفداران خود در ارتباط باشید.
-                </p>
-                <Link
-                  href="/artist/register"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-violet-600 text-white px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-                >
-                  <span>ساخت حساب هنرمندی</span>
-                  <FaArrowLeft className="text-sm" />
-                </Link>
-              </div>
-            </div>
-          </div>
+          <Link
+            href={"/plus"}
+            className="select-none bg-gradient-to-br from-violet-500/70 h-32 to-violet-600/80 p-8 rounded-2xl flex justify-between items-center"
+          >
+            <p className="text-6xl font-bold">ترپفا پلاس</p>
+            <FaMusic size={70} />
+          </Link>
           {/* Quick Links */}
           <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 shadow-xl">
             <div className="mb-8">
@@ -519,13 +473,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
-      {/* نمایش مدیریت تامبنیل برای ادمین‌ها */}
-      {profile?.role === "admin" && (
-        <div className="mt-8">
-          <ArticleThumbnailManager />
-        </div>
-      )}
     </div>
   );
 }

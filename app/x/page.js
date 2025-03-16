@@ -29,33 +29,34 @@ export default function ArtistsPage() {
   }, []);
 
   return (
-    <div>
+    <>
       <Title
         title={"افراد"}
         desc={
           "لیستی از افراد فعال در کامیونیتی از جمله: خواننده ها، بیت میکر ها، میکس من ها، گرافیک آرتیست ها و..."
         }
       />
-      <BannerAds />
       {loading ? (
         <LoadingPart />
+      ) : artists.length > 0 ? (
+        artists.map((artist, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+          >
+            <ArtistPart
+              url={artist.url}
+              artistName={artist.display_name}
+              image={artist.avatar_url}
+              role={artist.role}
+            />
+          </div>
+        ))
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {artists.length > 0 ? (
-            artists.map((artist) => (
-              <ArtistPart
-                key={artist.id}
-                url={artist.url}
-                artistName={artist.name}
-                image={artist.image || "/default-avatar.jpg"}
-                role={artist.role}
-              />
-            ))
-          ) : (
-            <LoadingPart />
-          )}
-        </div>
+        <p className="text-center text-gray-400 col-span-full">
+          هیچ فردی یافت نشد.
+        </p>
       )}
-    </div>
+    </>
   );
 }

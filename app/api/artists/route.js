@@ -4,23 +4,36 @@ import { apiCache, CACHE_TIME } from "@/lib/cache";
 
 export async function GET() {
   try {
-    // چک کردن کش
     const cachedData = apiCache.get("artists_list");
     if (cachedData) {
       return NextResponse.json(cachedData);
     }
 
-    const { data, error } = await supabase
+    const { data: artists, error } = await supabase
       .from("artists")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select("url, role, user_id");
 
-    if (error) throw error;
+    const { data: profiles, error: error1 } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url");
 
-    // ذخیره در کش با TTL طولانی‌تر
-    apiCache.set("artists_list", data, CACHE_TIME.VERY_LONG);
+    if (error || error1) throw error;
 
-    return NextResponse.json(data, {
+    // Transform data by matching artists with their profiles
+    const transformedData = artists.map((artist) => {
+      const profile = profiles.find((p) => p.id === artist.user_id);
+      return {
+        url: artist.url,
+        role: artist.role,
+        display_name: profile?.display_name,
+        avatar_url: profile?.avatar_url,
+      };
+    });
+
+    // Cache the transformed data
+    apiCache.set("artists_list", transformedData, CACHE_TIME.VERY_LONG);
+
+    return NextResponse.json(transformedData, {
       headers: {
         "Cache-Control":
           "public, s-maxage=86400, stale-while-revalidate=172800",

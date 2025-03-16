@@ -57,12 +57,12 @@ export function useError() {
 
 function Toast({ messages, isOffline }) {
   return (
-    <div className="fixed right-0 top-5 flex flex-col gap-2 z-50 w-full lg:max-w-sm px-5">
+    <div className="fixed right-0 top-0 flex flex-col gap-2 z-[100] max-w-full w-auto lg:max-w-sm p-5">
       {/* نمایش وضعیت آفلاین */}
       {isOffline && (
-        <div className="border-yellow-600/80 bg-yellow-600/20 backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg inline-flex gap-1.5 items-center border">
+        <div className="w-auto border-white/50 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg inline-flex gap-1.5 items-center border">
           <MdWifiOff size={16} />
-          اتصال به اینترنت قطع شده. ممکنه بخاطر vpn باشه!
+          اتصالت به اینترنت قطع شده!
         </div>
       )}
 
@@ -70,7 +70,7 @@ function Toast({ messages, isOffline }) {
       {messages.slice(-4).map((message, index) => (
         <div
           key={index}
-          className={`border backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-1000 opacity-100 inline-flex gap-1.5 items-center
+          className={`w-auto border backdrop-blur-md text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-1000 opacity-100 inline-flex gap-1.5 items-center
             ${
               message.type === "error"
                 ? "border-red-600/80 bg-red-600/20"

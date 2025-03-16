@@ -23,7 +23,7 @@ export default function PostParts({ url, title, desc, author, date, image }) {
           </h2>
 
           <p
-            className="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-4"
+            className="text-gray-400 text-sm leading-relaxed line-clamp-2 mb-4"
             dangerouslySetInnerHTML={{ __html: desc }}
           ></p>
 

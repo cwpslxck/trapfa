@@ -60,8 +60,8 @@ export default function ArtistDetail({ params }) {
       {/* Hero Section */}
       <div className="relative h-[40vh] rounded-2xl overflow-hidden">
         <Image
-          src={artist.image || "/default-avatar.jpg"}
-          alt={artist.name || "آرتیست"}
+          src={artist.avatar_url || "/default-avatar.jpg"}
+          alt={artist.display_name || "آرتیست"}
           width={600}
           height={600}
           className="object-cover h-full w-full"
@@ -85,8 +85,8 @@ export default function ArtistDetail({ params }) {
             </div>
             <div>
               <Image
-                src={artist.image || "/default-avatar.jpg"}
-                alt={artist.name || "آرتیست"}
+                src={artist.avatar_url || "/default-avatar.jpg"}
+                alt={artist.display_name || "آرتیست"}
                 width={600}
                 height={600}
                 priority
@@ -163,7 +163,7 @@ export default function ArtistDetail({ params }) {
       <div>
         <Title
           title="آثار آرتیست"
-          desc={`تمام آهنگ‌هایی که ${artist.name} توی اونا حضور داشته`}
+          desc={`تمام آهنگ‌هایی که ${artist.display_name} توی اونا حضور داشته`}
         />
         <LoadingPart />
       </div>

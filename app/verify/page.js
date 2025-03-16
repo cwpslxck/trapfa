@@ -23,11 +23,8 @@ export default function VerifyPage() {
   const { showSuccess, showError } = useError();
   const [verificationCode, setVerificationCode] = useState("");
   const [formData, setFormData] = useState({
-    instagramId: "",
-    displayName: "",
-    birthDate: "",
-    city: "",
-    screenshot: null,
+    url: "",
+    name: "",
   });
   const [copied, setCopied] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
@@ -61,21 +58,23 @@ export default function VerifyPage() {
 
       if (data && data.length > 0) {
         const lastRequest = data[0];
-        if (lastRequest.status === "pending") {
-          setHasPendingRequest(true);
-          setShowConfirmDialog(true);
+        if (
+          lastRequest.status === "rejected" ||
+          lastRequest.status === "inprogress"
+        ) {
           setLoading(false);
+          generateVerificationCode();
           return;
-        } else if (lastRequest.status === "approved") {
-          showError("حساب شما قبلاً تایید شده است");
+        } else {
           router.push("/dashboard");
           return;
         }
+      } else {
+        router.push("/dashboard");
+        return;
       }
-
-      setLoading(false);
-      generateVerificationCode();
     } catch (error) {
+      console.error(error);
       router.push("/dashboard");
     }
   };
@@ -91,7 +90,7 @@ export default function VerifyPage() {
         .from("verification_requests")
         .delete()
         .eq("user_id", user.id)
-        .eq("status", "pending");
+        .eq("status", "waiting");
 
       if (error) throw error;
 
@@ -161,7 +160,6 @@ export default function VerifyPage() {
           user_id: user.id,
           instagram_id: formData.instagramId,
           verification_code: code,
-          status: "pending",
         });
 
         if (error) throw error;
@@ -175,8 +173,10 @@ export default function VerifyPage() {
 
         // آپلود عکس در storage
         const fileExt = formData.screenshot.name.split(".").pop();
-        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-        const filePath = `verification-screenshots/${fileName}`;
+        const fileName = `${
+          formData.instagramId
+        }_${verificationCode}_${Date.now()}.${fileExt}`;
+        const filePath = `/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("screenshots")
@@ -231,13 +231,22 @@ export default function VerifyPage() {
 
         if (profileError) throw profileError;
 
+        //in dev progress
+
+        const { error: statusUpdateError } = await supabase
+          .from("verification_requests")
+          .update({ status: "waiting", updated_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("verification_code", verificationCode);
+
+        if (statusUpdateError) throw statusUpdateError;
+
         showSuccess("اطلاعات شما با موفقیت ثبت شد");
         router.push("/dashboard");
       }
     } catch (error) {
       showError(error.message);
     } finally {
-      window.location.reload();
       setLoading(false);
     }
   };
@@ -293,15 +302,13 @@ export default function VerifyPage() {
               تایید هویت اینستاگرام
             </h1>
             <p className="my-3 text-sm leading-relaxed">
-              برای اطمینان ازینکه کسی با پروفایل یک شخص دیگه ثبتنام نکنه ما
-              مجبوریم که مراحل احراز هویت رو انجام بدیم.
+              برای جلوگیری از اسپم شدن ثبت‌نام ها، لازمه که احراز هویت بشید:
               <br />
+              1. کد زیر رو کپی کنید.
               <br />
-              1. لطفا کد زیر رو کپی کنید
+              2. اون رو توی بیو اینستاگرام خودتون قرار بدید.
               <br />
-              2. کد رو توی بیو اینستاگرام خودتون قرار بدید
-              <br />
-              3. از صفحه پروفایل اینستاگرام خودتون اسکرین‌شات بگیرید
+              3. از صفحه پروفایل اینستاگرام خودتون اسکرین‌شات بگیرید.
             </p>
 
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-[1px] rounded-xl w-full">
