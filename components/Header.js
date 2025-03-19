@@ -6,9 +6,13 @@ import { FaUser } from "react-icons/fa";
 import { MdElectricBolt } from "react-icons/md";
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import Image from "next/image";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const menuItems = [
+  {
+    title: "ترپفا پلاس",
+    link: "plus",
+  },
   {
     title: "مقاله‌ها",
     link: "posts",
@@ -23,11 +27,34 @@ const menuItems = [
   },
 ];
 
-function Header() {
+export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [localProfile, setLocalProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { user, profile, loading } = useAuth();
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const storedProfile = localStorage.getItem("userProfile");
+        if (storedProfile) {
+          setLocalProfile(JSON.parse(storedProfile));
+        }
+      }
+    } catch (error) {
+      console.error("Error checking user:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const userProfile = useMemo(() => {
     if (loading) {
@@ -36,7 +63,7 @@ function Header() {
       );
     }
 
-    if (user && profile) {
+    if (localProfile) {
       return (
         <Link
           href="/dashboard"
@@ -44,8 +71,8 @@ function Header() {
         >
           <div className="w-7 h-7 rounded-full overflow-hidden bg-stone-800">
             <Image
-              src={profile.avatar_url || "/default-avatar.jpg"}
-              alt={profile.display_name}
+              src={localProfile.avatar_url || "/default-avatar.jpg"}
+              alt={localProfile.display_name}
               width={28}
               height={28}
               className="w-full h-full object-cover"
@@ -54,7 +81,7 @@ function Header() {
             />
           </div>
           <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
-            {profile.display_name}
+            {localProfile.display_name}
           </span>
         </Link>
       );
@@ -68,7 +95,7 @@ function Header() {
         <FaUser className="text-lg" />
       </Link>
     );
-  }, [user, profile, loading]);
+  }, [localProfile, loading]);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -178,5 +205,3 @@ function Header() {
     </>
   );
 }
-
-export default Header;

@@ -13,6 +13,7 @@ import {
   FaBirthdayCake,
   FaExclamationTriangle,
 } from "react-icons/fa";
+
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import LoadingPage from "@/components/LoadingPage";
 
@@ -69,13 +70,15 @@ export default function VerifyPage() {
           router.push("/dashboard");
           return;
         }
-      } else {
-        router.push("/dashboard");
-        return;
       }
+
+      // New user without any verification requests
+      setLoading(false);
+      generateVerificationCode();
     } catch (error) {
       console.error(error);
-      router.push("/dashboard");
+      showError("خطا در بررسی وضعیت کاربر");
+      router.push("/auth");
     }
   };
 
@@ -215,23 +218,42 @@ export default function VerifyPage() {
           throw new Error("لطفا تاریخ تولد خود را وارد کنید");
         }
         setStep(6);
-      } else if (step === 6) {
+      } // In the final step where profile is updated
+      else if (step === 6) {
         if (!formData.city) {
           throw new Error("لطفا شهر محل سکونت خود را وارد کنید");
         }
 
-        // ذخیره همه اطلاعات در جدول profiles
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: user.id,
-          display_name: formData.displayName,
-          birth_date: formData.birthDate,
-          city: formData.city,
-          updated_at: new Date().toISOString(),
+        // Update profile using the /api/me endpoint
+        const response = await fetch("/api/me", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${
+              (
+                await supabase.auth.getSession()
+              ).data.session.access_token
+            }`,
+          },
+          body: JSON.stringify({
+            display_name: formData.displayName,
+            birth_date: formData.birthDate,
+            city: formData.city,
+          }),
         });
 
-        if (profileError) throw profileError;
+        if (!response.ok) {
+          throw new Error("Failed to update profile");
+        }
 
-        //in dev progress
+        // Update localStorage with new profile data
+        localStorage.setItem(
+          "userProfile",
+          JSON.stringify({
+            display_name: formData.displayName,
+            avatar_url: null, // Can be updated later when avatar feature is added
+          })
+        );
 
         const { error: statusUpdateError } = await supabase
           .from("verification_requests")

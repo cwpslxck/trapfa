@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { useError } from "@/components/ErrorContext";
 import LoadingPage from "@/components/LoadingPage";
-import { RiCloseLine } from "react-icons/ri";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 
@@ -19,22 +18,6 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // چک کردن localStorage
-    const cachedUser = localStorage.getItem("cached_user");
-    const lastCheck = localStorage.getItem("last_auth_check");
-    const now = Date.now();
-
-    // اگر کمتر از 1 ساعت از آخرین چک گذشته و کاربر در حافظه هست
-    if (
-      cachedUser &&
-      lastCheck &&
-      now - parseInt(lastCheck) < 60 * 60 * 1000 // 1 ساعت
-    ) {
-      router.push("/dashboard");
-      return;
-    }
-
-    // در غیر این صورت از سرور چک می‌کنیم
     checkUser();
   }, []);
 
@@ -68,6 +51,23 @@ export default function AuthPage() {
         await supabase.auth.signInWithPassword({ email, password });
 
       if (loginData?.user) {
+        // Fetch user profile after successful login
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, avatar_url")
+          .eq("id", loginData.user.id)
+          .single();
+
+        if (profile) {
+          localStorage.setItem(
+            "userProfile",
+            JSON.stringify({
+              display_name: profile.display_name,
+              avatar_url: profile.avatar_url,
+            })
+          );
+        }
+
         showSuccess("با موفقیت وارد شدید!");
         router.push("/dashboard");
       } else {

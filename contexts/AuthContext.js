@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
-        cache: "force-cache",
       });
 
       if (response.ok) {

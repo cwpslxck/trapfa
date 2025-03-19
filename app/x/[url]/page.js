@@ -78,7 +78,7 @@ export default function ArtistDetail({ params }) {
               </span>
               <div className="flex items-center gap-3">
                 <h1 className="text-4xl md:text-5xl font-black">
-                  {artist.name || "بدون نام"}
+                  {artist.display_name || "بدون نام"}
                 </h1>
                 {/* badges goes here */}
               </div>

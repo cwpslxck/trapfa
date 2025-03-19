@@ -1,30 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import LoadingPage from "@/components/LoadingPage";
 import { useError } from "@/components/ErrorContext";
+import LoadingPage from "@/components/LoadingPage";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
-  FaUserEdit,
-  FaUserShield,
-  FaArrowLeft,
-  FaSignOutAlt,
-  FaUser,
-  FaMapMarkerAlt,
   FaBirthdayCake,
+  FaCheck,
+  FaMapMarkerAlt,
   FaMusic,
   FaPen,
-  FaUsers,
-  FaStar,
-  FaInstagram,
-  FaCheck,
+  FaSignOutAlt,
   FaTimes,
+  FaUser,
+  FaUserEdit,
+  FaUsers,
 } from "react-icons/fa";
-import Image from "next/image";
 import { MdSettings } from "react-icons/md";
-import { useAuth } from "@/contexts/AuthContext";
 
 const ProfileAvatar = ({ profile, className }) => {
   return (
@@ -73,6 +69,15 @@ export default function Dashboard() {
         }
 
         const userData = await response.json();
+        // Update localStorage with fresh profile data
+        localStorage.setItem(
+          "userProfile",
+          JSON.stringify({
+            display_name: userData.display_name,
+            avatar_url: userData.avatar_url,
+          })
+        );
+
         setProfile(userData);
         setEditedProfile(userData);
       } catch (error) {
@@ -89,6 +94,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
+      localStorage.removeItem("userProfile");
       if (error) throw error;
       router.push("/auth");
     } catch (error) {
@@ -161,14 +167,25 @@ export default function Dashboard() {
 
       if (!response.ok) throw new Error("Failed to update profile");
 
-      // بروزرسانی state
-      setProfile({ ...editedProfile, avatar_url: avatarUrl });
+      const updatedProfile = { ...editedProfile, avatar_url: avatarUrl };
+
+      // Update localStorage with new profile data
+      localStorage.setItem(
+        "userProfile",
+        JSON.stringify({
+          display_name: updatedProfile.display_name,
+          avatar_url: updatedProfile.avatar_url,
+        })
+      );
+
+      setProfile(updatedProfile);
       setIsEditing(false);
       setAvatarFile(null);
       setAvatarPreview(null);
       showSuccess("اطلاعات با موفقیت بروزرسانی شد");
-      // ریفرش کردن صفحه
-      window.location.reload();
+
+      // Remove page reload since we're handling state updates
+      // window.location.reload();
     } catch (error) {
       showError("خطا در بروزرسانی اطلاعات");
     } finally {
@@ -238,7 +255,7 @@ export default function Dashboard() {
 
   return (
     <div className="py-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Section */}
         <div className="space-y-8">
           <div className="bg-gradient-to-br from-stone-800/80 to-stone-900/80 backdrop-blur rounded-2xl p-8 w-full shadow-xl">
