@@ -11,11 +11,11 @@ export async function GET() {
 
     const { data: artists, error } = await supabase
       .from("artists")
-      .select("url, role, user_id");
+      .select("url, role, user_id, avatar_url");
 
     const { data: profiles, error: error1 } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url");
+      .select("id, display_name");
 
     if (error || error1) throw error;
 
@@ -26,7 +26,7 @@ export async function GET() {
         url: artist.url,
         role: artist.role,
         display_name: profile?.display_name,
-        avatar_url: profile?.avatar_url,
+        avatar_url: artists?.avatar_url,
       };
     });
 

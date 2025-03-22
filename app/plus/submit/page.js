@@ -20,19 +20,55 @@ import {
 } from "react-icons/fa";
 import LoadingPage from "@/components/LoadingPage";
 import { MdSell } from "react-icons/md";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PlusSubmitPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const { showSuccess, showError } = useError();
+  const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     url: "",
     role: "",
     platforms: {},
     user_id: "",
+    avatar_url: "",
   });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          router.push("/auth");
+          return;
+        }
+
+        const response = await fetch("/api/me", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
+        }
+
+        const userData = await response.json();
+
+        setProfile(userData);
+      } catch (error) {
+        showError("خطا در دریافت اطلاعات کاربری");
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const platformConfigs = {
     خوانندگی: [
@@ -122,12 +158,7 @@ export default function PlusSubmitPage() {
   useEffect(() => {
     const checkExistingArtist = async () => {
       try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-
-        if (userError) throw userError;
+        // First check if user is authenticated
         if (!user) {
           router.push("/auth");
           return;
@@ -158,8 +189,11 @@ export default function PlusSubmitPage() {
       }
     };
 
-    checkExistingArtist();
-  }, []);
+    // Only run the check if auth loading is complete
+    if (!authLoading) {
+      checkExistingArtist();
+    }
+  }, [user, authLoading]);
 
   const handleNextStep = async (e) => {
     e.preventDefault();
@@ -229,6 +263,7 @@ export default function PlusSubmitPage() {
           url: formData.url,
           role: formData.role,
           platforms: formData.platforms,
+          avatar_url: profile.avatar_url,
         });
 
         if (insertError) {

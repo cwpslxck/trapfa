@@ -39,19 +39,17 @@ export default function ArtistsPage() {
       {loading ? (
         <LoadingPart />
       ) : artists.length > 0 ? (
-        artists.map((artist, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
-          >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {artists.map((artist, index) => (
             <ArtistPart
+              key={index}
               url={artist.url}
               artistName={artist.display_name}
               image={artist.avatar_url}
               role={artist.role}
             />
-          </div>
-        ))
+          ))}
+        </div>
       ) : (
         <p className="text-center text-gray-400 col-span-full">
           هیچ فردی یافت نشد.

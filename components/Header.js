@@ -59,7 +59,10 @@ export default function Header() {
   const userProfile = useMemo(() => {
     if (loading) {
       return (
-        <div className="w-20 h-10 rounded-full bg-stone-800 animate-pulse" />
+        <div className="flex w-28 items-center justify-between gap-3 p-1.5 rounded-full bg-stone-900">
+          <div className=""></div>
+          <div className="w-7 h-7 rounded-full bg-stone-800"></div>
+        </div>
       );
     }
 
@@ -67,8 +70,11 @@ export default function Header() {
       return (
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 py-1.5 px-3 rounded-full bg-stone-900 hover:bg-stone-800 transition-all group"
+          className="flex items-center gap-1 justify-between py-1.5 px-1.5 rounded-full bg-stone-900 hover:bg-stone-800 transition-all group"
         >
+          <span className="text-sm px-2 font-medium text-white/80 group-hover:text-white transition-colors">
+            {localProfile.display_name}
+          </span>
           <div className="w-7 h-7 rounded-full overflow-hidden bg-stone-800">
             <Image
               src={localProfile.avatar_url || "/default-avatar.jpg"}
@@ -80,9 +86,6 @@ export default function Header() {
               priority
             />
           </div>
-          <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
-            {localProfile.display_name}
-          </span>
         </Link>
       );
     }
@@ -122,30 +125,32 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky py-2 top-0 z-50 backdrop-blur-lg bg-black/70">
-        <nav className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 hover:bg-white/10 cursor-pointer rounded-xl transition-colors"
-            >
-              <RiMenu3Line size={24} />
-            </button>
-            <Link href="/" className="font-black text-2xl tracking-wide">
-              مجله ترپفا
-            </Link>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8">
-            {menuItems.map((item) => (
-              <Link
-                key={item.link}
-                href={`/${item.link}`}
-                className={`relative py-5 text-sm font-medium transition-colors hover:text-violet-500`}
+      <header className="sticky py-2 top-0 z-50 backdrop-blur-lg bg-black/70 px-6">
+        <nav className="flex items-center justify-between h-16">
+          <div className="flex items-center gap-10">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="md:hidden p-2 hover:bg-white/10 cursor-pointer rounded-xl transition-colors"
               >
-                {item.title}
+                <RiMenu3Line size={24} />
+              </button>
+              <Link href="/" className="font-black text-2xl tracking-wide">
+                مجله ترپفا
               </Link>
-            ))}
+            </div>
+
+            <div className="hidden md:flex items-center gap-6">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.link}
+                  href={`/${item.link}`}
+                  className={`relative py-5 text-sm font-medium transition-colors hover:text-violet-500`}
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-4">{userProfile}</div>

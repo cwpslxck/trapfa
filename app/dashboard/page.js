@@ -96,7 +96,7 @@ export default function Dashboard() {
       const { error } = await supabase.auth.signOut();
       localStorage.removeItem("userProfile");
       if (error) throw error;
-      router.push("/auth");
+      router.push("/");
     } catch (error) {
       showError("خطا در خروج از حساب کاربری");
     } finally {
